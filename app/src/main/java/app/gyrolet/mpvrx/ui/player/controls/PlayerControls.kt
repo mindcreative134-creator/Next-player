@@ -73,8 +73,11 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -469,6 +472,142 @@ fun PlayerControls(
               ),
             ).padding(top = 16.dp, start = 14.dp),
       )
+    }
+
+    val context = LocalContext.current
+    val retryScope = rememberCoroutineScope()
+    val sessionState by PlaybackSession.state.collectAsState()
+    if (sessionState.phase == app.gyrolet.mpvrx.ui.player.PlaybackPhase.ERROR) {
+      val currentItem = sessionState.currentItem
+      val errorMsg = sessionState.error ?: "Unable to connect or load stream."
+      val streamUrl = currentItem?.playableUri
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .background(Color.Black.copy(alpha = 0.85f))
+          .padding(24.dp)
+          .zIndex(100f),
+        contentAlignment = Alignment.Center,
+      ) {
+        androidx.compose.material3.Card(
+          shape = RoundedCornerShape(20.dp),
+          colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+          ),
+          elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 12.dp),
+          modifier = Modifier.widthIn(max = 480.dp),
+        ) {
+          Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+          ) {
+            Icon(
+              imageVector = Icons.RoundedFilled.Cancel,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.error,
+              modifier = Modifier.size(48.dp),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+              text = "Stream Playback Failed",
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.Bold,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+              text = errorMsg,
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            if (!streamUrl.isNullOrBlank()) {
+              Spacer(modifier = Modifier.height(12.dp))
+              Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                modifier = Modifier.fillMaxWidth(),
+              ) {
+                Text(
+                  text = streamUrl,
+                  style = MaterialTheme.typography.bodySmall,
+                  color = MaterialTheme.colorScheme.primary,
+                  maxLines = 2,
+                  overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                  modifier = Modifier.padding(8.dp),
+                )
+              }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+              androidx.compose.material3.OutlinedButton(
+                onClick = { onBackPress() },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+              ) {
+                Text("Close")
+              }
+              if (!streamUrl.isNullOrBlank()) {
+                androidx.compose.material3.OutlinedButton(
+                  onClick = {
+                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                    val clip = android.content.ClipData.newPlainText("Stream URL", streamUrl)
+                    clipboard?.setPrimaryClip(clip)
+                    android.widget.Toast.makeText(context, "URL copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                  },
+                  modifier = Modifier.weight(1f),
+                  shape = RoundedCornerShape(12.dp),
+                ) {
+                  Text("Copy")
+                }
+                  val isYouTube = streamUrl.contains("youtube.com", ignoreCase = true) || streamUrl.contains("youtu.be", ignoreCase = true)
+                  androidx.compose.material3.OutlinedButton(
+                    onClick = {
+                      runCatching {
+                        val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(streamUrl)).apply {
+                          addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(browserIntent)
+                      }.onFailure {
+                        android.widget.Toast.makeText(context, "Unable to open link", android.widget.Toast.LENGTH_SHORT).show()
+                      }
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                  ) {
+                    Text(if (isYouTube) "YouTube" else "Browser")
+                  }
+              }
+              androidx.compose.material3.Button(
+                onClick = {
+                  if (currentItem != null) {
+                    retryScope.launch(Dispatchers.IO) {
+                      PlaybackSession.load(currentItem)
+                    }
+                  }
+                },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+              ) {
+                Text("Retry")
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Circular Glowing Buffering Indicator when stream or player is caching
+    if (pausedForCache == true) {
+      Box(
+        modifier = Modifier.fillMaxSize().zIndex(95f),
+        contentAlignment = Alignment.Center,
+      ) {
+        app.gyrolet.mpvrx.ui.player.controls.components.GlowingCircularBufferIndicator()
+      }
     }
 
     CompositionLocalProvider(

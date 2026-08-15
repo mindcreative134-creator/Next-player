@@ -11,8 +11,9 @@ package app.gyrolet.mpvrx.ui.player
 
 
 internal fun getTrackSelectionId(property: String): Int =
-  runCatching { PlaybackSession.getPropertyString(property)?.toIntOrNull() ?: 0 }
-    .getOrDefault(0)
+  runCatching {
+    (PlaybackSession.propString[property].value ?: PlaybackSession.getPropertyString(property))?.toIntOrNull() ?: 0
+  }.getOrDefault(0)
 
 internal fun setTrackSelectionId(
   property: String,

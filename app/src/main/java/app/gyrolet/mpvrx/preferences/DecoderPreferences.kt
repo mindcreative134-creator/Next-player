@@ -18,7 +18,8 @@ import app.gyrolet.mpvrx.ui.player.HdrScreenMode
 class DecoderPreferences(
   preferenceStore: PreferenceStore,
 ) {
-  val profile = preferenceStore.getString("mpv_profile", "fast")
+  val profile = preferenceStore.getString("mpv_profile", "default")
+  val hwdecMode = preferenceStore.getString("hwdec_mode", "auto")
   val tryHWDecoding = preferenceStore.getBoolean("try_hw_dec", true)
   val gpuNext = preferenceStore.getBoolean("gpu_next")
   val useVulkan = preferenceStore.getBoolean("use_vulkan", false)

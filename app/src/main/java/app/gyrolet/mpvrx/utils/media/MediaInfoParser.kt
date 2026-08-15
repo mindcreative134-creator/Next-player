@@ -496,8 +496,8 @@ object MediaInfoParser {
       if (dashEpResult != null) {
         episode = dashEpResult.first
         if (season == null) season = 1
-        if (dashEpResult.second != null) {
-          val candidate = cleanRawTitle(dashEpResult.second!!)
+        dashEpResult.second?.let { secondStr ->
+          val candidate = cleanRawTitle(secondStr)
           if (candidate.isNotBlank() && candidate != cleanTitle) {
             episodeTitle = candidate
           }

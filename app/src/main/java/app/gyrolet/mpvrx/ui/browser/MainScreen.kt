@@ -10,6 +10,7 @@
 package app.gyrolet.mpvrx.ui.browser
 
 import android.annotation.SuppressLint
+import app.gyrolet.mpvrx.ads.BottomBannerAdBar
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
@@ -66,6 +67,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
@@ -304,13 +307,15 @@ object MainScreen : Screen {
       modifier = Modifier.fillMaxSize(),
     ) { paddingValues ->
       Box(modifier = Modifier.fillMaxSize()) {
-        val fabBottomPadding = 88.dp
+        // 88dp = pill nav bar clearance, 52dp = anchored banner height
+        val fabBottomPadding = 88.dp + 52.dp
         val contentBottomPadding = fabBottomPadding + miniPlayerNavClearance
 
         if (visibleTabs.isEmpty()) {
           CompositionLocalProvider(
             LocalNavigationBarHeight provides contentBottomPadding,
             LocalMainNavigationBar provides mainNavBar,
+            LocalOnTabSelected provides onTabSelected,
           ) {
             FolderListScreen.Content()
           }
@@ -323,6 +328,7 @@ object MainScreen : Screen {
             CompositionLocalProvider(
               LocalNavigationBarHeight provides contentBottomPadding,
               LocalMainNavigationBar provides mainNavBar,
+              LocalOnTabSelected provides onTabSelected,
             ) {
               val tab = visibleTabs[page]
               when (tab) {
@@ -336,7 +342,7 @@ object MainScreen : Screen {
           }
         }
 
-        // Animated bottom navigation bar with slide animations
+        // Bottom overlay: banner ad ABOVE pill nav bar, stacked in a column
         AnimatedVisibility(
           visible = !hideNavigationBar && visibleTabs.isNotEmpty() && !isPermissionDenied,
           enter =
@@ -364,32 +370,40 @@ object MainScreen : Screen {
               .navigationBarsPadding()
               .padding(bottom = 12.dp),
         ) {
-          BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val containerWidth = maxWidth
-            val targetCenter = containerWidth * animatedOffsetFraction
-            val leftPadding = (targetCenter - (navBarWidth / 2)).coerceAtLeast(0.dp)
+          Column(modifier = Modifier.fillMaxWidth()) {
+            // Banner ad sits directly above the pill nav bar
+            BottomBannerAdBar(
+              modifier = Modifier.fillMaxWidth(),
+              isPlayerActive = false,
+            )
 
-            // Publish the animated nav bar geometry so the mini player overlay can sit
-            // on its right side in landscape/tablet single-pane.
-            SideEffect {
-              NavigationBarState.navbarLeftOffset = leftPadding
-              NavigationBarState.navbarWidth = navBarWidth
-            }
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+              val containerWidth = maxWidth
+              val targetCenter = containerWidth * animatedOffsetFraction
+              val leftPadding = (targetCenter - (navBarWidth / 2)).coerceAtLeast(0.dp)
 
-            Box(
-              modifier =
-                Modifier
-                  .padding(start = leftPadding)
-                  .width(navBarWidth),
-              contentAlignment = Alignment.Center,
-            ) {
-              TelegramPillNavigationBar(
-                visibleTabs = visibleTabs,
-                selectedTab = selectedTab,
-                pagerPositionFloatProvider = pagerPositionFloatProvider,
-                onTabSelected = onTabSelected,
-                modifier = Modifier.fillMaxWidth(),
-              )
+              // Publish the animated nav bar geometry so the mini player overlay can sit
+              // on its right side in landscape/tablet single-pane.
+              SideEffect {
+                NavigationBarState.navbarLeftOffset = leftPadding
+                NavigationBarState.navbarWidth = navBarWidth
+              }
+
+              Box(
+                modifier =
+                  Modifier
+                    .padding(start = leftPadding)
+                    .width(navBarWidth),
+                contentAlignment = Alignment.Center,
+              ) {
+                TelegramPillNavigationBar(
+                  visibleTabs = visibleTabs,
+                  selectedTab = selectedTab,
+                  pagerPositionFloatProvider = pagerPositionFloatProvider,
+                  onTabSelected = onTabSelected,
+                  modifier = Modifier.fillMaxWidth(),
+                )
+              }
             }
           }
         }
@@ -447,13 +461,13 @@ private fun TelegramPillNavigationBar(
     Surface(
       modifier = Modifier.fillMaxWidth(),
       shape = CircleShape,
-      color = MaterialTheme.colorScheme.surfaceContainerHigh,
+      color = Color(0xFF13141F),
       tonalElevation = 6.dp,
       shadowElevation = 8.dp,
       border =
         BorderStroke(
           width = 1.dp,
-          color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+          color = Color(0xFF28293D),
         ),
     ) {
       Box(
@@ -472,7 +486,11 @@ private fun TelegramPillNavigationBar(
                 .graphicsLayer {
                   translationX = if (isRtl) -itemWidthPx * animatedIndex else itemWidthPx * animatedIndex
                 }.clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .background(
+                  Brush.horizontalGradient(
+                    listOf(Color(0xFF8B5CF6), Color(0xFF6D28D9)),
+                  ),
+                ),
           )
         }
 
@@ -487,9 +505,9 @@ private fun TelegramPillNavigationBar(
             val progress = (1f - distanceFromPill).coerceIn(0f, 1f)
 
             val contentColor =
-              lerp(
-                MaterialTheme.colorScheme.onSurfaceVariant,
-                MaterialTheme.colorScheme.onPrimaryContainer,
+              androidx.compose.ui.graphics.lerp(
+                Color(0xFF94A3B8),
+                Color.White,
                 progress,
               )
 
@@ -589,6 +607,11 @@ val LocalNavigationBarHeight = compositionLocalOf { 0.dp }
 // CompositionLocal for main navigation bar
 val LocalMainNavigationBar =
   compositionLocalOf<@Composable (Modifier) -> Unit> {
+    { }
+  }
+
+internal val LocalOnTabSelected =
+  compositionLocalOf<(MainScreen.MainTab) -> Unit> {
     { }
   }
 

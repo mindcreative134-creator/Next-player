@@ -20,10 +20,15 @@ import app.gyrolet.mpvrx.data.network.proxy.NetworkStreamingProxy
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import `is`.xyz.mpv.MPVLib
 import `is`.xyz.mpv.MPVNode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.util.ArrayDeque
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
@@ -513,13 +518,25 @@ object PlaybackSession : MPVLib.EventObserver {
           error = null,
         )
       }
-      val userAgent = resolvedItem.headers.entries.firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
+      val userAgent =
+        resolvedItem.headers.entries
+          .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }
+          ?.value
+          ?.ifBlank { null }
+          ?: app.gyrolet.mpvrx.utils.media.HttpUtils.DEFAULT_USER_AGENT
+
       val headerFields =
         resolvedItem.headers.entries
           .filterNot { it.key.equals("User-Agent", ignoreCase = true) }
+          .filter { it.key.isNotBlank() && it.value.isNotBlank() }
           .joinToString(",") { (name, value) -> "$name: ${value.replace(",", "\\,")}" }
-      MPVLib.setPropertyString("user-agent", userAgent.orEmpty())
-      MPVLib.setPropertyString("http-header-fields", headerFields)
+
+      MPVLib.setPropertyString("user-agent", userAgent)
+      if (headerFields.isNotBlank()) {
+        MPVLib.setPropertyString("http-header-fields", headerFields)
+      } else {
+        MPVLib.setPropertyString("http-header-fields", "")
+      }
       MPVLib.setPropertyString("force-media-title", "")
 
       // Keep the native core paused while tracks/decoder/output are being replaced. When a valid

@@ -17,7 +17,7 @@
   <string name="pref_appearance_amoled_mode_title">Mode noir AMOLED</string>
   <string name="pref_appearance_amoled_mode_summary">Utiliser un arrière-plan noir pur pour les thèmes sombres</string>
   <string name="pref_appearance_system_font_title">Utiliser la police système</string>
-  <string name="pref_appearance_system_font_summary">Utiliser la police système Android dans mpvRx à la place de Google Sans Flex</string>
+  <string name="pref_appearance_system_font_summary">Utiliser la police système Android dans Player à la place de Google Sans Flex</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">Activer les couleurs dynamiques</string>
   <string name="pref_appearance_material_you_summary_disabled">Disponible uniquement sur Android 12 et versions ultérieures</string>
@@ -298,7 +298,7 @@ Suivant : NEXT</string>
   <string name="pref_app_language_title">Langue</string>
   <string name="pref_app_language_system_default">Langue du système</string>
   <string name="pref_app_language_restart_title">Redémarrage requis</string>
-  <string name="pref_app_language_restart_message">Redémarrez mpvRx pour appliquer la nouvelle langue.</string>
+  <string name="pref_app_language_restart_message">Redémarrez Player pour appliquer la nouvelle langue.</string>
   <string name="pref_app_language_restart_now">Redémarrer maintenant</string>
   <string name="pref_advanced_mpv_conf_storage_location">Choisir l’emplacement de stockage de la configuration</string>
   <string name="pref_advanced_mpv_conf">Modifier mpv.conf</string>
@@ -349,12 +349,6 @@ Suivant : NEXT</string>
   <string name="pref_about_title">À propos</string>
   <string name="pref_about_summary">Remerciements, licences</string>
   <string name="pref_about_oss_libraries">Bibliothèques</string>
-  <string name="pref_about_donate_title">Faire un don</string>
-  <string name="pref_about_donate_kofi">Ko-fi</string>
-  <string name="pref_about_donate_kofi_summary">Soutenir le développeur sur Ko-fi</string>
-  <string name="pref_about_donate_paypal">PayPal</string>
-  <string name="pref_about_donate_paypal_summary">Soutenir le développeur sur PayPal</string>
-  <string name="pref_about_donate_upi">UPI</string>
   <string name="player_sheets_add_ext_sub">Ajouter des sous-titres externes</string>
   <string name="player_sheets_add_ext_audio">Ajouter des pistes audio externes</string>
   <string name="player_sheets_tracks_off">Désactivé</string>
@@ -504,7 +498,7 @@ Suivant : NEXT</string>
   <string name="notification_playing">Lecture en cours</string>
   <string name="notification_chapter_counter">Chapitre %1$d sur %2$d</string>
   <string name="notification_permission_denied">L’autorisation des notifications est requise pour les commandes de lecture en arrière-plan.</string>
-  <string name="notification_permission_disabled">Les notifications sont désactivées pour mpvRx. Activez-les pour afficher les commandes de lecture.</string>
+  <string name="notification_permission_disabled">Les notifications sont désactivées pour Player. Activez-les pour afficher les commandes de lecture.</string>
   <string name="notification_disabled_in_advanced_settings">Activez les notifications dans les paramètres avancés pour utiliser la lecture en arrière-plan.</string>
   <string name="pref_advanced_notification_style">Style de notification</string>
   <!-- Media Info Activity -->
@@ -1206,15 +1200,15 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="ui_allow_access">AUTORISER L’ACCÈS</string>
   <string name="ui_why_do_i_see_this">Pourquoi est-ce affiché ?</string>
   <string name="ui_why_this_permission_is_needed">Pourquoi cette autorisation est nécessaire</string>
-  <string name="ui_mpvrx_needs_access_to_your_video_files_to_provide_its_core_funct">mpvRx doit accéder à vos fichiers vidéo pour assurer ses fonctions essentielles de lecteur multimédia.</string>
+  <string name="ui_mpvrx_needs_access_to_your_video_files_to_provide_its_core_funct">Player doit accéder à vos fichiers vidéo pour assurer ses fonctions essentielles de lecteur multimédia.</string>
   <string name="ui_the_permission_is_used_exclusively_for">Cette autorisation est utilisée exclusivement pour :</string>
   <string name="ui_discovering_and_displaying_your_video_files_n_playing_media_cont">• Détecter et afficher vos fichiers vidéo
 • Lire du contenu multimédia
 • Charger des fichiers de sous-titres</string>
-  <string name="ui_mpvrx_has_always_required_storage_access_permission_as_it_s_esse">mpvRx a toujours nécessité l’accès au stockage, indispensable pour trouver tous les fichiers multimédias et de sous-titres de votre appareil, y compris ceux que le système ne prend pas en charge.</string>
+  <string name="ui_mpvrx_has_always_required_storage_access_permission_as_it_s_esse">Player a toujours nécessité l’accès au stockage, indispensable pour trouver tous les fichiers multimédias et de sous-titres de votre appareil, y compris ceux que le système ne prend pas en charge.</string>
   <string name="ui_however_due_to_a_change_in_security_policy_apps_built_for_androi">Cependant, en raison d’un changement de politique de sécurité, les applications conçues pour Android 11 et versions ultérieures nécessitent désormais une autorisation supplémentaire pour conserver le même accès.</string>
   <string name="ui_please_know_that_this_permission_is_only_used_for_the_auto_disco">Cette autorisation sert uniquement à détecter automatiquement les fichiers multimédias et de sous-titres sur votre appareil et ne nous permet en aucun cas d’accéder aux données privées stockées par d’autres applications.</string>
-  <string name="ui_mpvrx_is_an_open_source_project_you_can_review_the_source_code_a">mpvRx est un projet open source. Vous pouvez consulter le code source et vérifier l’utilisation des autorisations dans notre dépôt GitHub :</string>
+  <string name="ui_mpvrx_is_an_open_source_project_you_can_review_the_source_code_a">Player est un projet open source. Vous pouvez consulter le code source et vérifier l’utilisation des autorisations dans notre dépôt GitHub :</string>
   <string name="ui_be_rest_assured_your_privacy_is_our_utmost_priority_and_we_neith">Soyez rassuré : votre confidentialité est notre priorité absolue. Nous n’accédons pas à vos fichiers à d’autres fins, ne les transférons pas et ne les stockons pas sur nos serveurs. Ils restent sur votre appareil.</string>
   <string name="ui_app_permissions">Autorisations de l’application</string>
   <string name="ui_permissions_setup_subtitle">Configurez les autorisations pour activer les fonctionnalités principales et la lecture média.</string>
@@ -1299,18 +1293,14 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="ui_github">GitHub</string>
   <string name="ui_device_info">Informations sur l’appareil</string>
   <string name="ui_buy_me_a_coffee">Offrez-moi un café</string>
-  <string name="ui_if_you_enjoy_mpvrx_consider_supporting_its_development_every_bit">Si vous appréciez mpvRx, pensez à soutenir son développement. Chaque contribution compte !</string>
-  <string name="ui_upi_id">Identifiant UPI</string>
-  <string name="ui_panditritesh2001_okhdfcbank">panditritesh2001@okhdfcbank</string>
+  <string name="ui_if_you_enjoy_mpvrx_consider_supporting_its_development_every_bit">Si vous appréciez Player, pensez à soutenir son développement. Chaque contribution compte !</string>
+  <string name="ui_panditritesh2001_okhdfcbank"></string>
   <string name="ui_send_love">Envoyer votre soutien</string>
   <string name="ui_auto_check_for_updates">Rechercher automatiquement les mises à jour</string>
   <string name="ui_check_on_startup">Vérifier au démarrage</string>
   <string name="ui_check_for_updates_now">Rechercher des mises à jour maintenant</string>
-  <string name="ui_core_open_source_dependencies_used_by_mpvrx">Principales dépendances open source utilisées par mpvRx.</string>
-  <string name="ui_copy_upi_id">Copier l’identifiant UPI</string>
+  <string name="ui_core_open_source_dependencies_used_by_mpvrx">Principales dépendances open source utilisées par Player.</string>
   <string name="ui_already_using_latest_version">Vous utilisez déjà la dernière version</string>
-  <string name="ui_upi_id_copied">Identifiant UPI copié !</string>
-  <string name="ui_no_upi_app_found">Aucune application UPI trouvée</string>
   <string name="ui_install_and_update_yt_dlp_for_streaming_support">Installez et mettez à jour yt-dlp pour la prise en charge du streaming</string>
   <string name="ui_instructions_for_ai_file_renaming">Instructions pour le renommage de fichiers par IA...</string>
   <string name="ui_instructions_for_ai_subtitle_translation">Instructions pour la traduction de sous-titres par IA...</string>
@@ -1502,8 +1492,8 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="syncplay_connecting">Connexion…</string>
   <string name="syncplay_player_status">Syncplay : %1$s (%2$d utilisateurs)</string>
   <!-- Additional synchronized strings -->
-  <string name="app_name">mpvRx</string>
-  <string name="github_repo_url">https://github.com/Riteshp2001/mpvRx</string>
+  <string name="app_name" translatable="false">NextPlayer</string>
+  <string name="github_repo_url">https://github.com</string>
   <string name="hdr_mode_bt2020">BT.2020</string>
   <string name="hdr_mode_bt2100_hlg">BT.2100 HLG</string>
   <string name="hdr_mode_bt2100_pq">BT.2100 PQ</string>
@@ -1515,9 +1505,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="player_sheets_track_lang_wo_title">#%1$d: %2$s</string>
   <string name="player_sheets_track_title_w_lang">#%1$d: %2$s (%3$s)</string>
   <string name="player_sheets_track_title_wo_lang">#%1$d: %2$s</string>
-  <string name="pref_about_donate_kofi_url">https://ko-fi.com/adityanarvekar</string>
-  <string name="pref_about_donate_paypal_url">https://paypal.me/aadinarvekar</string>
-  <string name="pref_about_donate_upi_id">aadiinarvekar@upi</string>
   <string name="ui_24fps">24fps</string>
   <string name="ui_30fps">30fps</string>
   <string name="ui_60fps">60fps</string>

@@ -300,7 +300,7 @@ fun MpvrxTheme(
             )
           }
           useDarkTheme -> dynamicDarkColorScheme(context)
-          else -> dynamicLightColorScheme(context).withComfortableLightSurfaces()
+          else -> dynamicLightColorScheme(context)
         }
       }
       useDarkTheme && amoledMode -> appTheme.getAmoledColorScheme()

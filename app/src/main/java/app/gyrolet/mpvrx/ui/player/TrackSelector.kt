@@ -78,7 +78,7 @@ class TrackSelector(
   )
 
   suspend fun onFileLoaded(hasState: Boolean = false) =
-    withContext(Dispatchers.Main) {
+    withContext(Dispatchers.Default) {
       var attempts = 0
       val maxAttempts = 20
 

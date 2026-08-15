@@ -88,17 +88,18 @@ import app.gyrolet.mpvrx.ui.theme.AppShapeScale
 import app.gyrolet.mpvrx.utils.permission.PermissionUtils
 
 private fun checkFilePermission(context: Context): Boolean {
-  val isPlayStoreBuild = BuildConfig.SCOPED_STORAGE_ONLY
-  return if (!isPlayStoreBuild && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+  val hasStandardPermission = ContextCompat.checkSelfPermission(
+    context,
+    PermissionUtils.getStoragePermission(),
+  ) == PackageManager.PERMISSION_GRANTED
+
+  val hasAllFilesAccess = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
     Environment.isExternalStorageManager()
-  } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
-    true
   } else {
-    ContextCompat.checkSelfPermission(
-      context,
-      PermissionUtils.getStoragePermission(),
-    ) == PackageManager.PERMISSION_GRANTED
+    false
   }
+
+  return hasStandardPermission || hasAllFilesAccess
 }
 
 private fun checkNotificationPermission(context: Context): Boolean {
@@ -265,35 +266,16 @@ fun PermissionDeniedState(
             // Section 1: File & Storage Access
             PermissionSectionCard(
               title = stringResource(R.string.ui_file_permission_title),
-              description = if (isPlayStoreBuild) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                  stringResource(R.string.ui_file_permission_desc_playstore_tiramisu)
-                } else {
-                  stringResource(R.string.ui_file_permission_desc_playstore)
-                }
+              description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                stringResource(R.string.ui_file_permission_desc_playstore_tiramisu)
               } else {
-                stringResource(R.string.ui_file_permission_desc_all_files)
+                stringResource(R.string.ui_file_permission_desc_playstore)
               },
               isGranted = isFileGranted,
               icon = Icons.RoundedFilled.Folder,
               onClick = {
                 if (!isFileGranted) {
-                  if (isPlayStoreBuild) {
-                    onRequestPermission()
-                  } else {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                      try {
-                        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                        intent.data = Uri.parse("package:${context.packageName}")
-                        context.startActivity(intent)
-                      } catch (_: Exception) {
-                        val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                        context.startActivity(intent)
-                      }
-                    } else {
-                      onRequestPermission()
-                    }
-                  }
+                  onRequestPermission()
                 }
               },
             )
@@ -407,9 +389,6 @@ fun PermissionDeniedState(
 
   // Explanation Dialog
   if (showExplanationDialog) {
-    val uriHandler = LocalUriHandler.current
-    val githubUrl = "https://github.com/Riteshp2001/mpvRx"
-
     AlertDialog(
       onDismissRequest = { showExplanationDialog = false },
       icon = {
@@ -476,40 +455,6 @@ fun PermissionDeniedState(
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           }
-
-          Text(
-            text = stringResource(R.string.ui_mpvrx_is_an_open_source_project_you_can_review_the_source_code_a),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-
-          val annotatedString = buildAnnotatedString {
-            pushStringAnnotation(
-              tag = "URL",
-              annotation = githubUrl,
-            )
-            withStyle(
-              style = SpanStyle(
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium,
-                textDecoration = TextDecoration.Underline,
-              ),
-            ) {
-              append(githubUrl)
-            }
-            pop()
-          }
-
-          ClickableText(
-            text = annotatedString,
-            style = MaterialTheme.typography.bodyMedium,
-            onClick = { offset ->
-              annotatedString
-                .getStringAnnotations(tag = "URL", start = offset, end = offset)
-                .firstOrNull()
-                ?.let { uriHandler.openUri(it.item) }
-            },
-          )
 
           Text(
             text = stringResource(R.string.ui_be_rest_assured_your_privacy_is_our_utmost_priority_and_we_neith),

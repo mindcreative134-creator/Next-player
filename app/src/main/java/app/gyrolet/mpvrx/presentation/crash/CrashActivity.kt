@@ -170,7 +170,7 @@ class CrashActivity : AppCompatActivity() {
       activity: Activity,
     ) {
       withContext(NonCancellable) {
-        val file = File(activity.cacheDir, "mpvrx_logs.txt")
+        val file = File(activity.cacheDir, "player_logs.txt")
         if (file.exists()) file.delete()
         file.createNewFile()
         file.appendText(concatLogs(deviceInfo, exceptionString, logcat))
@@ -295,7 +295,7 @@ class CrashActivity : AppCompatActivity() {
               onClick = {
                 SafeClipboard.copyPlainText(
                   context = this@CrashActivity,
-                  label = "mpvrx_crash_logs",
+                  label = "player_crash_logs",
                   text = concatLogs(collectDeviceInfo(), exceptionString, logcat),
                 )
               },

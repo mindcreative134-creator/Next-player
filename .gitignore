@@ -91,6 +91,9 @@ Desktop.ini
 *.pem
 *.p12
 
+!releasekey/
+!releasekey/**
+
 # Gradle signing configs
 keystore.properties
 

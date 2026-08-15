@@ -17,7 +17,7 @@
   <string name="pref_appearance_amoled_mode_title">AMOLED 纯黑模式</string>
   <string name="pref_appearance_amoled_mode_summary">为深色主题使用纯黑背景</string>
   <string name="pref_appearance_system_font_title">使用系统字体</string>
-  <string name="pref_appearance_system_font_summary">在整个 mpvRx 中使用 Android 系统字体，而不是 Google Sans Flex</string>
+  <string name="pref_appearance_system_font_summary">在整个 Player 中使用 Android 系统字体，而不是 Google Sans Flex</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">启用动态颜色</string>
   <string name="pref_appearance_material_you_summary_disabled">仅适用于 Android 12 及更高版本</string>
@@ -298,7 +298,7 @@
   <string name="pref_app_language_title">语言</string>
   <string name="pref_app_language_system_default">跟随系统</string>
   <string name="pref_app_language_restart_title">需要重启</string>
-  <string name="pref_app_language_restart_message">重启 mpvRx 以应用新语言。</string>
+  <string name="pref_app_language_restart_message">重启 Player 以应用新语言。</string>
   <string name="pref_app_language_restart_now">立即重启</string>
   <string name="pref_advanced_mpv_conf_storage_location">选择配置存储位置</string>
   <string name="pref_advanced_mpv_conf">编辑 mpv.conf</string>
@@ -349,12 +349,6 @@
   <string name="pref_about_title">关于</string>
   <string name="pref_about_summary">致谢、许可证</string>
   <string name="pref_about_oss_libraries">库</string>
-  <string name="pref_about_donate_title">捐赠</string>
-  <string name="pref_about_donate_kofi">Ko-fi</string>
-  <string name="pref_about_donate_kofi_summary">在 Ko-fi 上支持开发者</string>
-  <string name="pref_about_donate_paypal">PayPal</string>
-  <string name="pref_about_donate_paypal_summary">通过 PayPal 支持开发者</string>
-  <string name="pref_about_donate_upi">UPI</string>
   <string name="player_sheets_add_ext_sub">添加外部字幕</string>
   <string name="player_sheets_add_ext_audio">添加外部音轨</string>
   <string name="player_sheets_tracks_off">关闭</string>
@@ -504,7 +498,7 @@
   <string name="notification_playing">正在播放</string>
   <string name="notification_chapter_counter">第 %1$d 章，共 %2$d 章</string>
   <string name="notification_permission_denied">后台播放控制需要通知权限。</string>
-  <string name="notification_permission_disabled">mpvRx 的通知已禁用。请启用通知以显示播放控制。</string>
+  <string name="notification_permission_disabled">Player 的通知已禁用。请启用通知以显示播放控制。</string>
   <string name="notification_disabled_in_advanced_settings">请在高级设置中启用通知以使用后台播放。</string>
   <string name="pref_advanced_notification_style">通知样式</string>
   <!-- Media Info Activity -->
@@ -1206,15 +1200,15 @@
   <string name="ui_allow_access">允许访问</string>
   <string name="ui_why_do_i_see_this">为什么会看到这个？</string>
   <string name="ui_why_this_permission_is_needed">为什么需要此权限</string>
-  <string name="ui_mpvrx_needs_access_to_your_video_files_to_provide_its_core_funct">mpvRx 需要访问您的视频文件，才能提供媒体播放器的核心功能。</string>
+  <string name="ui_mpvrx_needs_access_to_your_video_files_to_provide_its_core_funct">Player 需要访问您的视频文件，才能提供媒体播放器的核心功能。</string>
   <string name="ui_the_permission_is_used_exclusively_for">此权限仅用于：</string>
   <string name="ui_discovering_and_displaying_your_video_files_n_playing_media_cont">• 查找并显示您的视频文件
 • 播放媒体内容
 • 加载字幕文件</string>
-  <string name="ui_mpvrx_has_always_required_storage_access_permission_as_it_s_esse">mpvRx 一直需要存储访问权限，因为这是查找设备上所有媒体和字幕文件所必需的，包括系统不支持的文件。</string>
+  <string name="ui_mpvrx_has_always_required_storage_access_permission_as_it_s_esse">Player 一直需要存储访问权限，因为这是查找设备上所有媒体和字幕文件所必需的，包括系统不支持的文件。</string>
   <string name="ui_however_due_to_a_change_in_security_policy_apps_built_for_androi">但是，由于安全政策发生变化，面向 Android 11 及更高版本构建的应用现在需要额外权限才能继续进行相同访问。</string>
   <string name="ui_please_know_that_this_permission_is_only_used_for_the_auto_disco">请注意，此权限仅用于自动发现设备上的媒体/字幕文件，并不会让我们以任何方式访问其他应用存储的私人数据文件。</string>
-  <string name="ui_mpvrx_is_an_open_source_project_you_can_review_the_source_code_a">mpvRx 是一个开源项目。您可以访问我们的 GitHub 仓库查看源代码并验证权限的使用方式：</string>
+  <string name="ui_mpvrx_is_an_open_source_project_you_can_review_the_source_code_a">Player 是一个开源项目。您可以访问我们的 GitHub 仓库查看源代码并验证权限的使用方式：</string>
   <string name="ui_be_rest_assured_your_privacy_is_our_utmost_priority_and_we_neith">请放心，您的隐私是我们的首要任务。我们不会出于其他目的访问您的文件，也不会将其传输或存储到服务器；文件会安全地保留在您的设备上。</string>
   <string name="ui_app_permissions">应用权限</string>
   <string name="ui_permissions_setup_subtitle">配置权限以启用核心功能和媒体播放。</string>
@@ -1299,18 +1293,14 @@
   <string name="ui_github">GitHub</string>
   <string name="ui_device_info">设备信息</string>
   <string name="ui_buy_me_a_coffee">请我喝咖啡</string>
-  <string name="ui_if_you_enjoy_mpvrx_consider_supporting_its_development_every_bit">如果您喜欢 mpvRx，请考虑支持其开发。每一份支持都有帮助！</string>
-  <string name="ui_upi_id">UPI ID</string>
-  <string name="ui_panditritesh2001_okhdfcbank">panditritesh2001@okhdfcbank</string>
+  <string name="ui_if_you_enjoy_mpvrx_consider_supporting_its_development_every_bit">如果您喜欢 Player，请考虑支持其开发。每一份支持都有帮助！</string>
+  <string name="ui_panditritesh2001_okhdfcbank"></string>
   <string name="ui_send_love">送出支持</string>
   <string name="ui_auto_check_for_updates">自动检查更新</string>
   <string name="ui_check_on_startup">启动时检查</string>
   <string name="ui_check_for_updates_now">立即检查更新</string>
-  <string name="ui_core_open_source_dependencies_used_by_mpvrx">mpvRx 使用的核心开源依赖项。</string>
-  <string name="ui_copy_upi_id">复制 UPI ID</string>
+  <string name="ui_core_open_source_dependencies_used_by_mpvrx">Player 使用的核心开源依赖项。</string>
   <string name="ui_already_using_latest_version">已是最新版本</string>
-  <string name="ui_upi_id_copied">UPI ID 已复制！</string>
-  <string name="ui_no_upi_app_found">未找到 UPI 应用</string>
   <string name="ui_install_and_update_yt_dlp_for_streaming_support">安装并更新 yt-dlp 以支持流媒体</string>
   <string name="ui_instructions_for_ai_file_renaming">AI 文件重命名说明...</string>
   <string name="ui_instructions_for_ai_subtitle_translation">AI 字幕翻译说明...</string>
@@ -1502,8 +1492,8 @@
   <string name="syncplay_connecting">正在连接…</string>
   <string name="syncplay_player_status">Syncplay：%1$s（%2$d 位用户）</string>
   <!-- Additional synchronized strings -->
-  <string name="app_name">mpvRx</string>
-  <string name="github_repo_url">https://github.com/Riteshp2001/mpvRx</string>
+  <string name="app_name" translatable="false">NextPlayer</string>
+  <string name="github_repo_url">https://github.com</string>
   <string name="hdr_mode_bt2020">BT.2020</string>
   <string name="hdr_mode_bt2100_hlg">BT.2100 HLG</string>
   <string name="hdr_mode_bt2100_pq">BT.2100 PQ</string>
@@ -1515,9 +1505,6 @@
   <string name="player_sheets_track_lang_wo_title">#%1$d: %2$s</string>
   <string name="player_sheets_track_title_w_lang">#%1$d: %2$s (%3$s)</string>
   <string name="player_sheets_track_title_wo_lang">#%1$d: %2$s</string>
-  <string name="pref_about_donate_kofi_url">https://ko-fi.com/adityanarvekar</string>
-  <string name="pref_about_donate_paypal_url">https://paypal.me/aadinarvekar</string>
-  <string name="pref_about_donate_upi_id">aadiinarvekar@upi</string>
   <string name="ui_24fps">24fps</string>
   <string name="ui_30fps">30fps</string>
   <string name="ui_60fps">60fps</string>

@@ -67,6 +67,8 @@ import app.gyrolet.mpvrx.ui.utils.LocalShowSettingsBackArrow
 import app.gyrolet.mpvrx.ui.utils.popSafely
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
 
 private data class SettingsDestination(
   val title: String,
@@ -144,6 +146,8 @@ object PreferencesScreen : Screen {
     val backstack = LocalBackStack.current
     val colorScheme = MaterialTheme.colorScheme
     val emphasizedTypography = LocalEmphasizedTypography.current
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
       topBar = {
@@ -185,7 +189,18 @@ object PreferencesScreen : Screen {
           SettingsSectionBlock(
             section = section,
             selectedScreen = selectedScreen,
-            onItemClick = { destination -> onScreenSelected(destination.screen) },
+            onItemClick = { destination -> 
+              if (destination.title == "Support Developer (Watch Ad)") {
+                app.gyrolet.mpvrx.ads.AdManager.loadAndShowRewardedAd(
+                  activity = context as android.app.Activity,
+                  onRewardEarned = {
+                    android.widget.Toast.makeText(context, "Thank you for your support!", android.widget.Toast.LENGTH_SHORT).show()
+                  }
+                )
+              } else {
+                onScreenSelected(destination.screen) 
+              }
+            },
           )
         }
       }
@@ -345,6 +360,19 @@ object PreferencesScreen : Screen {
               summary = stringResource(R.string.pref_about_summary),
               icon = Icons.RoundedFilled.Info,
               screen = AboutScreen,
+            ),
+          ),
+      ),
+      SettingsSection(
+        title = "Support", // Using hardcoded string for simplicity since strings.xml isn't easily modified
+        tint = colorScheme.onSurfaceVariant,
+        items =
+          listOf(
+            SettingsDestination(
+              title = "Support Developer (Watch Ad)",
+              summary = "Watch a short ad to support the development of this app.",
+              icon = Icons.RoundedFilled.Info,
+              screen = AboutScreen, // We will intercept this click
             ),
           ),
       ),

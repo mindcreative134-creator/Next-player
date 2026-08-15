@@ -529,7 +529,7 @@ private fun GridColumnsNextSection(
       }
     }
   } else {
-    val selector = folderGridColumnSelector ?: videoGridColumnSelector!!
+    val selector = folderGridColumnSelector ?: videoGridColumnSelector ?: return
     Row(
       modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
       horizontalArrangement = Arrangement.SpaceBetween,

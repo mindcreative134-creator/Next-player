@@ -1,5 +1,5 @@
 <resources>
-  <string name="app_name" translatable="false">mpvRx</string>
+  <string name="app_name" translatable="false">NextPlayer</string>
   <string name="generic_reset">Reset</string>
   <string name="generic_share">Share</string>
   <string name="generic_confirm">Confirm</string>
@@ -17,7 +17,7 @@
   <string name="pref_appearance_amoled_mode_title">AMOLED Black Mode</string>
   <string name="pref_appearance_amoled_mode_summary">Use pure black background for dark themes</string>
   <string name="pref_appearance_system_font_title">Use system font</string>
-  <string name="pref_appearance_system_font_summary">Use the Android system typeface across mpvRx instead of Google Sans Flex</string>
+  <string name="pref_appearance_system_font_summary">Use the Android system typeface across the player instead of Google Sans Flex</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">Enable dynamic colors</string>
   <string name="pref_appearance_material_you_summary_disabled">Only available on Android 12 and above</string>
@@ -301,7 +301,7 @@
   <string name="pref_app_language_title">Language</string>
   <string name="pref_app_language_system_default">System default</string>
   <string name="pref_app_language_restart_title">Restart required</string>
-  <string name="pref_app_language_restart_message">Restart mpvRx to apply the new language.</string>
+  <string name="pref_app_language_restart_message">Restart the app to apply the new language.</string>
   <string name="pref_app_language_restart_now">Restart now</string>
   <string name="pref_advanced_mpv_conf_storage_location">Pick configuration storage location</string>
   <string name="pref_advanced_mpv_conf">Edit mpv.conf</string>
@@ -352,15 +352,6 @@
   <string name="pref_about_title">About</string>
   <string name="pref_about_summary">Acknowledgments, licenses</string>
   <string name="pref_about_oss_libraries">Libraries</string>
-  <string name="pref_about_donate_title">Donate</string>
-  <string name="pref_about_donate_kofi">Ko-fi</string>
-  <string name="pref_about_donate_kofi_summary">Support the developer on Ko-fi</string>
-  <string name="pref_about_donate_kofi_url" translatable="false">https://ko-fi.com/adityanarvekar</string>
-  <string name="pref_about_donate_paypal">PayPal</string>
-  <string name="pref_about_donate_paypal_summary">Support the developer on PayPal</string>
-  <string name="pref_about_donate_paypal_url" translatable="false">https://paypal.me/aadinarvekar</string>
-  <string name="pref_about_donate_upi">UPI</string>
-  <string name="pref_about_donate_upi_id" translatable="false">aadiinarvekar@upi</string>
   <string name="player_sheets_add_ext_sub">Add external subtitles</string>
   <string name="player_sheets_add_ext_audio">Add external audio tracks</string>
   <string name="player_sheets_tracks_off">Off</string>
@@ -459,7 +450,7 @@
   <string name="timer_remaining">%s remaining</string>
   <string name="toast_sleep_timer_ended">Sleep timer ended</string>
   <string name="volume_slider_absolute_value" translatable="false">%d</string>
-  <string name="github_repo_url" translatable="false">https://github.com/Riteshp2001/mpvRx</string>
+  <string name="github_repo_url" translatable="false">https://github.com</string>
   <string name="swap_the_volume_and_brightness_slider">Swap volume and brightness slider</string>
   <string name="pref_player_display_reduce_player_animation">Reduce player animation</string>
   <!-- Animation settings -->
@@ -518,7 +509,7 @@
   <string name="notification_playing">Playing</string>
   <string name="notification_chapter_counter">Chapter %1$d of %2$d</string>
   <string name="notification_permission_denied">Notification permission is required for background playback controls.</string>
-  <string name="notification_permission_disabled">Notifications are disabled for mpvRx. Enable them to show playback controls.</string>
+  <string name="notification_permission_disabled">Notifications are disabled. Enable them to show playback controls.</string>
   <string name="notification_disabled_in_advanced_settings">Enable notifications in Advanced Settings to use background playback.</string>
   <string name="pref_advanced_notification_style">Notification style</string>
   <!-- Media Info Activity -->
@@ -1255,13 +1246,13 @@
   <string name="ui_allow_access">ALLOW ACCESS</string>
   <string name="ui_why_do_i_see_this">Why do I see this?</string>
   <string name="ui_why_this_permission_is_needed">Why this permission is needed</string>
-  <string name="ui_mpvrx_needs_access_to_your_video_files_to_provide_its_core_funct">mpvRx needs access to your video files to provide its core functionality as a media player.</string>
+  <string name="ui_mpvrx_needs_access_to_your_video_files_to_provide_its_core_funct">The player needs access to your video files to provide its core functionality as a media player.</string>
   <string name="ui_the_permission_is_used_exclusively_for">The permission is used exclusively for:</string>
   <string name="ui_discovering_and_displaying_your_video_files_n_playing_media_cont">• Discovering and displaying your video files\n• Playing media content\n• Loading subtitle files</string>
-  <string name="ui_mpvrx_has_always_required_storage_access_permission_as_it_s_esse">mpvRx has always required storage access permission as it\'s essential for the app to find all media and subtitle files on your device, including the ones that are not supported by the system.</string>
-  <string name="ui_however_due_to_a_change_in_security_policy_apps_built_for_androi">However, due to a change in security policy, apps built for Android 11 and above now require additional permission to continue accessing the same.</string>
-  <string name="ui_please_know_that_this_permission_is_only_used_for_the_auto_disco">Please know that this permission is only used for the auto-discovery of media/subtitle files on your device and will not allow us to access the private data files stored by other apps in any way.</string>
-  <string name="ui_mpvrx_is_an_open_source_project_you_can_review_the_source_code_a">mpvRx is an open source project. You can review the source code and verify how permissions are used by visiting our GitHub repository at:</string>
+  <string name="ui_mpvrx_has_always_required_storage_access_permission_as_it_s_esse">Storage access permission is essential for the app to find all media and subtitle files on your device, including formats not indexed by the system.</string>
+  <string name="ui_however_due_to_a_change_in_security_policy_apps_built_for_androi">However, due to Android security policies, apps require explicit storage permission to discover local files.</string>
+  <string name="ui_please_know_that_this_permission_is_only_used_for_the_auto_disco">Please know that this permission is only used for the discovery of media files on your device and will never access private app data.</string>
+  <string name="ui_mpvrx_is_an_open_source_project_you_can_review_the_source_code_a">You can manage permissions and security settings anytime in the app settings.</string>
   <string name="ui_be_rest_assured_your_privacy_is_our_utmost_priority_and_we_neith">Be rest assured, your privacy is our utmost priority, and we neither access your files for other purposes nor transfer or store them to our servers. They remain safe on your device.</string>
   <string name="ui_app_permissions">App Permissions</string>
   <string name="ui_permissions_setup_subtitle">Configure permissions to enable core features and media playback.</string>
@@ -1342,22 +1333,18 @@
   <string name="ui_pan_zoom">Pan &amp; Zoom</string>
   <string name="ui_decrease_zoom">Decrease zoom</string>
   <string name="ui_increase_zoom">Increase zoom</string>
-  <string name="ui_by_ritesh_pandit">By Ritesh Pandit</string>
+  <string name="ui_by_ritesh_pandit">Player Team</string>
   <string name="ui_github">GitHub</string>
   <string name="ui_device_info">Device Info</string>
-  <string name="ui_buy_me_a_coffee">Buy Me a Coffee</string>
-  <string name="ui_if_you_enjoy_mpvrx_consider_supporting_its_development_every_bit">If you enjoy mpvRx, consider supporting its development. Every bit helps!</string>
-  <string name="ui_upi_id">UPI ID</string>
-  <string name="ui_panditritesh2001_okhdfcbank">panditritesh2001@okhdfcbank</string>
+  <string name="ui_buy_me_a_coffee">Rate Us</string>
+  <string name="ui_if_you_enjoy_mpvrx_consider_supporting_its_development_every_bit">If you enjoy using the player, consider rating us 5 stars on Google Play!</string>
+  <string name="ui_panditritesh2001_okhdfcbank"></string>
   <string name="ui_send_love">Send Love</string>
   <string name="ui_auto_check_for_updates">Auto Check for Updates</string>
   <string name="ui_check_on_startup">Check on startup</string>
   <string name="ui_check_for_updates_now">Check for Updates Now</string>
-  <string name="ui_core_open_source_dependencies_used_by_mpvrx">Core open source dependencies used by mpvRx.</string>
-  <string name="ui_copy_upi_id">Copy UPI ID</string>
+  <string name="ui_core_open_source_dependencies_used_by_mpvrx">Core open source dependencies used by the media player.</string>
   <string name="ui_already_using_latest_version">Already using latest version</string>
-  <string name="ui_upi_id_copied">UPI ID copied!</string>
-  <string name="ui_no_upi_app_found">No UPI app found</string>
   <string name="ui_install_and_update_yt_dlp_for_streaming_support">Install and update yt-dlp for streaming support</string>
   <string name="ui_instructions_for_ai_file_renaming">Instructions for AI file renaming...</string>
   <string name="ui_instructions_for_ai_subtitle_translation">Instructions for AI subtitle translation...</string>

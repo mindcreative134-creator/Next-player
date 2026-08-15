@@ -785,21 +785,23 @@ private fun StreamLinkSection(onPlayLink: (String) -> Unit) {
   }
 
   fun playCurrentLink() {
-    val sanitizedUrl = linkUrl.trim()
-    if (sanitizedUrl.isBlank()) return
+    val normalized = app.gyrolet.mpvrx.utils.media.HttpUtils.normalizeUrl(linkUrl)
+    if (normalized.isBlank()) return
 
     keyboardController?.hide()
-    onPlayLink(sanitizedUrl)
+    onPlayLink(normalized)
     linkUrl = ""
   }
+
+  val previewType = if (linkUrl.isNotBlank()) {
+    app.gyrolet.mpvrx.utils.media.HttpUtils.getStreamTypeDescription(linkUrl)
+  } else null
 
   Column(
     modifier = Modifier.fillMaxWidth(),
   ) {
     Text(
-      text =
-        androidx.compose.ui.res
-          .stringResource(app.gyrolet.mpvrx.R.string.ui_stream_link),
+      text = stringResource(app.gyrolet.mpvrx.R.string.ui_stream_link),
       style = MaterialTheme.typography.titleLarge,
       fontWeight = FontWeight.Bold,
       color = MaterialTheme.colorScheme.primary,
@@ -813,96 +815,122 @@ private fun StreamLinkSection(onPlayLink: (String) -> Unit) {
         ),
       shape = RoundedCornerShape(16.dp),
     ) {
-      Row(
-        modifier =
-          Modifier
-            .fillMaxWidth()
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(8.dp),
       ) {
-        OutlinedTextField(
-          value = linkUrl,
-          onValueChange = { linkUrl = it },
-          modifier = Modifier.weight(1f),
-          placeholder = {
-            Text(
-              text =
-                androidx.compose.ui.res
-                  .stringResource(app.gyrolet.mpvrx.R.string.ui_enter_stream_url),
-              color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            )
-          },
-          leadingIcon = {
-            Icon(
-              imageVector = Icons.RoundedFilled.Link,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-              modifier = Modifier.size(20.dp),
-            )
-          },
-          trailingIcon = {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-            ) {
-              IconButton(onClick = { pasteFromClipboard() }) {
-                Icon(
-                  imageVector = Icons.RoundedFilled.ContentPaste,
-                  contentDescription =
-                    androidx.compose.ui.res.stringResource(
-                      app.gyrolet.mpvrx.R.string.ui_paste_stream_url,
-                    ),
-                  modifier = Modifier.size(18.dp),
-                )
-              }
-              if (linkUrl.isNotBlank()) {
-                IconButton(onClick = { linkUrl = "" }) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          OutlinedTextField(
+            value = linkUrl,
+            onValueChange = { linkUrl = it },
+            modifier = Modifier.weight(1f),
+            placeholder = {
+              Text(
+                text = stringResource(app.gyrolet.mpvrx.R.string.ui_enter_stream_url),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+              )
+            },
+            leadingIcon = {
+              Icon(
+                imageVector = Icons.RoundedFilled.Link,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+              )
+            },
+            trailingIcon = {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                IconButton(onClick = { pasteFromClipboard() }) {
                   Icon(
-                    imageVector = Icons.RoundedFilled.Close,
-                    contentDescription =
-                      androidx.compose.ui.res.stringResource(
-                        app.gyrolet.mpvrx.R.string.ui_clear_stream_url,
-                      ),
+                    imageVector = Icons.RoundedFilled.ContentPaste,
+                    contentDescription = stringResource(app.gyrolet.mpvrx.R.string.ui_paste_stream_url),
                     modifier = Modifier.size(18.dp),
                   )
                 }
+                if (linkUrl.isNotBlank()) {
+                  IconButton(onClick = { linkUrl = "" }) {
+                    Icon(
+                      imageVector = Icons.RoundedFilled.Close,
+                      contentDescription = stringResource(app.gyrolet.mpvrx.R.string.ui_clear_stream_url),
+                      modifier = Modifier.size(18.dp),
+                    )
+                  }
+                }
               }
-            }
-          },
-          singleLine = true,
-          shape = RoundedCornerShape(14.dp),
-          colors =
-            OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-              unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-              focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-              unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            ),
-          keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-          keyboardActions =
-            KeyboardActions(
-              onGo = { playCurrentLink() },
-            ),
-        )
-        Spacer(modifier = Modifier.size(6.dp))
-        Button(
-          onClick = { playCurrentLink() },
-          enabled = linkUrl.isNotBlank(),
-          contentPadding = PaddingValues(12.dp),
-          shape = RoundedCornerShape(14.dp),
-          colors =
-            ButtonDefaults.buttonColors(
-              containerColor = MaterialTheme.colorScheme.primary,
-            ),
-          modifier =
-            Modifier.semantics {
-              contentDescription = playStreamContentDescription
             },
-        ) {
-          Icon(
-            imageVector = Icons.RoundedFilled.PlayArrow,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors =
+              OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+              ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+            keyboardActions =
+              KeyboardActions(
+                onGo = { playCurrentLink() },
+              ),
           )
+          Spacer(modifier = Modifier.size(6.dp))
+          Button(
+            onClick = { playCurrentLink() },
+            enabled = linkUrl.isNotBlank(),
+            contentPadding = PaddingValues(12.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors =
+              ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+              ),
+            modifier =
+              Modifier.semantics {
+                contentDescription = playStreamContentDescription
+              },
+          ) {
+            Icon(
+              imageVector = Icons.RoundedFilled.PlayArrow,
+              contentDescription = null,
+              modifier = Modifier.size(20.dp),
+            )
+          }
+        }
+
+        if (previewType != null) {
+          Spacer(modifier = Modifier.height(8.dp))
+          Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+              containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
+            ),
+            shape = RoundedCornerShape(10.dp),
+          ) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+              Text(
+                text = "Detected: $previewType",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+              )
+              Text(
+                text = if (linkUrl.startsWith("https://", true)) "HTTPS Secure" else "HTTP Protocol",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+          }
         }
       }
     }

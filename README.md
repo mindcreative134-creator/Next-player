@@ -2,10 +2,10 @@
   <img src="fastlane\metadata\android\en-US\images\icon.png" width="250" height="250" />
 </p>
 
-<h1 align="center">mpvRx</h1>
+<h1 align="center">NextPlayer</h1>
 
 <p align="center">
-  <b>Feature-rich, Efficient Powerful Android video player based on libmpv.</b>
+  <b>Advanced, Hardware-Accelerated 4K/HD Video & Audio Player for Android</b>
   <br>
   <i>No ads. No trackers. No noise. Just a serious video player with a calmer surface and a sharper edge.</i>
 </p>
@@ -17,8 +17,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg" />
   <img src="https://img.shields.io/badge/License-AGPL_v3-blue.svg" />
-  <img src="https://img.shields.io/github/v/release/Riteshp2001/mpvRx.svg?logo=github&label=Release&cacheSeconds=3600" />
-  <img src="https://img.shields.io/github/downloads/Riteshp2001/mpvRx/total?logo=github&cacheSeconds=3600" />
+  <img src="https://img.shields.io/github/v/release/Riteshp2001/NexPlay.svg?logo=github&label=Release&cacheSeconds=3600" />
+  <img src="https://img.shields.io/github/downloads/Riteshp2001/NexPlay/total?logo=github&cacheSeconds=3600" />
 </p>
 
 ---
@@ -48,7 +48,7 @@
 
 ## Features
 
-mpvRx pushes the mpv-android experience further with deep customization, thermal-aware performance, and unique quality-of-life features. Here's what sets it apart:
+NexPlay pushes the mpv-android experience further with deep customization, thermal-aware performance, and unique quality-of-life features. Here's what sets it apart:
 
 <details close>
 <summary><b>🎨 Theme & Visual System</b></summary>
@@ -272,21 +272,21 @@ First Pro Tip Keep Mpv Conf empty if you are newbie
 
 - **Use `gpu` not `gpu-next`** — gpu-next is a Vulkan-based renderer that keeps the GPU awake for no reason when playing normal video. The classic `gpu` backend is lighter and uses the OpenGL driver stack, which on most Android devices has better power characteristics.
 - **Disable Vulkan entirely.** Vulkan is great for Video Playback but also Heavy.
-- **Use the `fast` mpv profile.** It's literally built into mpvRx use that Mpv Profiles and Set it to Default  or in _mpv.conf_ `profile=fast`
+- **Use the `fast` mpv profile.** It's literally built into NexPlay use that Mpv Profiles and Set it to Default  or in _mpv.conf_ `profile=fast`
 - **Don't use shaders.** That Anime4K preset you using that's what's eating your battery. Shaders run on the GPU every single frame. If you're watching 24fps content and you have a shader pipeline running, congratulations — you're doing 24 unnecessary GPU compute passes per second for a Minute amount of visible benefit on a phone screen .
 - **Don't use AI-generated configs.** That means you, the person who copied a Reddit config with 200 lines of `scale=ewa_lanczossharp` and `dscale=mitchell` and `cscale=sinc` and a dozen `glsl-shaders` entries. Most  of You have no idea what any of those do. You just made your phone render video like it's preparing for a 4K cinema projection. On a 6-inch screen. Grow some Brains Its your android Phone not some Fuckin.. 4k Television
 
 **My POV:** mpv's default config with `profile=fast` and the `gpu` backend plays video with negligible battery impact — often **less** than OEM players because mpv doesn't have a billion proprietary DRM modules, analytics SDKs, and ad frameworks burning CPU in the background. The next time your battery drops more than 20-25% watching a 2-hour movie, don't blame mpv. Blame the 14 shaders you blindly copy-pasted.
 
-_Just a Pro tip if your battery consumption stays within 200 mAh and belwo 0.9W ( See Page 6 of mpvRx - video player More Settings -> Page6) useage than ur Mpv Conf are Proper for Video watching thats what i have experimented and telling rest all i don't know About in detail technicality's if anyone wanna tell me In depth guide then keep it to yourself i dont wanna listen_
+_Just a Pro tip if your battery consumption stays within 200 mAh and belwo 0.9W ( See Page 6 of NexPlay - video player More Settings -> Page6) useage than ur Mpv Conf are Proper for Video watching thats what i have experimented and telling rest all i don't know About in detail technicality's if anyone wanna tell me In depth guide then keep it to yourself i dont wanna listen_
 
 ---
 
 <div align="center">
-  <a href="https://github.com/Riteshp2001/mpvRx/releases">
+  <a href="https://github.com/Riteshp2001/NexPlay/releases">
     <img src="https://img.shields.io/badge/Download-Stable_Release-blue?style=for-the-badge&logo=github" alt="Stable Release">
   </a>
-  <!-- <a href="https://riteshp2001.github.io/mpvRx/">
+  <!-- <a href="https://riteshp2001.github.io/NexPlay/">
     <img src="https://img.shields.io/badge/Download-Preview_Build-orange?style=for-the-badge&logo=github" alt="Preview Build">
   </a> -->
 </div>
@@ -296,7 +296,7 @@ _Just a Pro tip if your battery consumption stays within 200 mAh and belwo 0.9W 
 </div> -->
 
 If something breaks, feels off, or deserves another pass, _don't be Dumb and ask for Trash Features which only you require it wll be auto deleted_, 
-report it in the [Issues](https://github.com/Riteshp2001/mpvRx/issues).
+report it in the [Issues](https://github.com/Riteshp2001/NexPlay/issues).
 
 ---
 
@@ -329,32 +329,6 @@ report it in the [Issues](https://github.com/Riteshp2001/mpvRx/issues).
 | `armeabi-v7a` | For older 32-bit ARM devices |
 | `x86` | For 32-bit Intel and AMD Android devices |
 | `x86_64` | For 64-bit Intel and AMD Android devices |
-
----
-
-## Support
-
-If you find mpvRx useful and would like to support its development, consider buying me a coffee! Your support keeps the project alive and helps push new features.
-
-<div align="center">
-
-### ☕ Buy Me a Coffee
-
-<a href="https://www.buymeacoffee.com/riteshp2001">
-  <img src="https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee">
-</a>
-
-### UPI
-
-`panditritesh2001@okhdfcbank`
-
-<a href="upi://pay?pa=panditritesh2001@okhdfcbank&pn=Ritesh%20Pandit&cu=INR">
-  <img src="fastlane/metadata/android/en-US/images/upiqr-code.svg" width="250" height="250" alt="UPI QR Code">
-</a>
-
-Scan with any UPI app (Google Pay, PhonePe, Paytm, BHIM)
-
-</div>
 
 ---
 
@@ -408,10 +382,10 @@ Distributed under **GNU Affero General Public License v3.0 (AGPL-3.0-or-later)**
 
 ## Star History
 
-<a href="https://www.star-history.com/#Riteshp2001/mpvRx&type=date&legend=top-left">
+<a href="https://www.star-history.com/#Riteshp2001/NexPlay&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Riteshp2001/mpvRx&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Riteshp2001/mpvRx&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Riteshp2001/mpvRx&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Riteshp2001/NexPlay&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Riteshp2001/NexPlay&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Riteshp2001/NexPlay&type=date&legend=top-left" />
  </picture>
 </a>

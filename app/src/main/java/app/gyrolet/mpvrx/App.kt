@@ -80,6 +80,10 @@ class App :
 
     Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(applicationContext, CrashActivity::class.java))
 
+    // Initialize AdManager asynchronously for AdMob ads
+    app.gyrolet.mpvrx.ads.AdManager.initialize(this)
+    app.gyrolet.mpvrx.ads.AppOpenAdManager(this).loadAd()
+
     // Native libmpv thumbnail engine used by browser, folder, playlist, and network previews.
     FastThumbnails.initialize(this)
 
@@ -126,6 +130,12 @@ class App :
     applicationScope.launch {
       runCatching {
         triggerMediaScanOnLaunch()
+      }
+    }
+
+    applicationScope.launch(Dispatchers.IO) {
+      runCatching {
+        app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpManager.ensureAssetsCopied(this@App)
       }
     }
   }

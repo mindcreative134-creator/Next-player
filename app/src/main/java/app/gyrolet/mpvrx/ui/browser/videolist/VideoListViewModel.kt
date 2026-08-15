@@ -231,10 +231,17 @@ class VideoListViewModel(
   }
 
   private suspend fun loadPlaybackInfo(videos: List<Video>) {
+    val watchedThreshold = browserPreferences.watchedThreshold.get()
+    val playbackStateMap = try {
+      playbackStateRepository.getAllPlaybackStates().associateBy { it.mediaTitle }
+    } catch (e: Exception) {
+      Log.e(tag, "Error fetching playback states for video list", e)
+      emptyMap()
+    }
+
     val videosWithInfo =
       videos.map { video ->
-        val playbackState = playbackStateRepository.getVideoDataByTitle(video.displayName)
-        val watchedThreshold = browserPreferences.watchedThreshold.get()
+        val playbackState = playbackStateMap[video.displayName]
 
         // Calculate watch progress (0.0 to 1.0)
         val progress =

@@ -139,7 +139,7 @@ data class YtdlpResolvedOptions(
 
 object YtdlpOptionsBuilder {
   const val DEFAULT_USER_AGENT =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
 
   fun build(settings: YtdlpOptionSettings): YtdlpResolvedOptions {
     val format = buildFormat(settings)
@@ -150,19 +150,29 @@ object YtdlpOptionsBuilder {
       value: String? = "",
     ) {
       val cleanedKey = key.trim().trimStart('-')
-      if (cleanedKey.isNotEmpty()) {
-        rawOptions[cleanedKey] = value?.trim()
+      if (cleanedKey.isNotEmpty() && !cleanedKey.contains(',') && !cleanedKey.contains(' ')) {
+        // mpv's ytdl_hook.lua splits ytdl-raw-options on ANY comma using string.gmatch(raw_options, "[^,]+").
+        // Commas within values cause Lua to split into invalid CLI flags (e.g. --web, --like Gecko).
+        // Therefore, sanitize all commas from values.
+        val cleanedValue = value?.trim()?.replace(",", "")?.ifBlank { null }
+        rawOptions[cleanedKey] = cleanedValue
       }
     }
 
-    add("user-agent", settings.userAgent.ifBlank { DEFAULT_USER_AGENT })
+    // Do NOT add user-agent here because user-agent has commas and mpv already passes --user-agent globally.
+    add("no-check-certificates")
     if (settings.writeSubs) add("write-subs")
     if (settings.writeAutoSubs) add("write-auto-subs")
-    settings.subtitleLanguages.ifBlank { "all" }.let { add("sub-langs", it) }
+    if (settings.subtitleLanguages.isNotBlank() && !settings.subtitleLanguages.equals("all", ignoreCase = true)) {
+      val subLang = settings.subtitleLanguages.substringBefore(',').trim()
+      if (subLang.isNotBlank()) {
+        add("sub-langs", subLang)
+      }
+    }
     settings.referer.ifNotBlank { add("referer", it) }
     settings.cookiesFile.ifNotBlank { add("cookies", it) }
     settings.proxy.ifNotBlank { add("proxy", it) }
-    settings.extractorArgs.ifNotBlank { add("extractor-args", it) }
+    settings.extractorArgs.ifNotBlank { add("extractor-args", it.replace(",", "")) }
     settings.formatSort.ifNotBlank { add("format-sort", it) }
     settings.mergeOutputFormat.ifNotBlank { add("merge-output-format", it) }
     if (settings.geoBypass) add("geo-bypass")
@@ -179,7 +189,13 @@ object YtdlpOptionsBuilder {
       add(parsed.key, parsed.value)
     }
 
-    val items = rawOptions.map { (key, value) -> "$key=${escapeRawOptionValue(value.orEmpty())}" }
+    val items = rawOptions.map { (key, value) ->
+      if (value.isNullOrBlank()) {
+        key
+      } else {
+        "$key=$value"
+      }
+    }
     return YtdlpResolvedOptions(
       format = format,
       rawOptions = items.joinToString(","),

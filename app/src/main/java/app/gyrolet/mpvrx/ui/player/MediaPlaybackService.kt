@@ -64,7 +64,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.lang.ref.WeakReference
@@ -1353,7 +1352,7 @@ class MediaPlaybackService :
   ) {
     if (eventId == MPVLib.MpvEvent.MPV_EVENT_SHUTDOWN) {
       Log.d(TAG, "MPV shutdown event received, stopping service")
-      savePlaybackStateBlocking()
+      schedulePlaybackStateSave(force = true)
       stopSelf()
       return
     }
@@ -1381,24 +1380,15 @@ class MediaPlaybackService :
     val snapshot = capturePlaybackStateSnapshot(identifier, oldState = null) ?: return
 
     playbackStateSaveJob?.cancel()
-    playbackStateSaveJob =
-      serviceScope.launch(Dispatchers.IO) {
+    if (force) {
+      CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
         persistPlaybackState(identifier, snapshot)
       }
-  }
-
-  private fun savePlaybackStateBlocking() {
-    val identifier = mediaIdentifier
-    if (identifier.isBlank()) return
-    val snapshot = capturePlaybackStateSnapshot(identifier, oldState = null) ?: return
-
-    playbackStateSaveJob?.cancel()
-    runBlocking(Dispatchers.IO) {
-      runCatching {
-        persistPlaybackState(identifier, snapshot)
-      }.onFailure { error ->
-        Log.e(TAG, "Error force-saving playback state", error)
-      }
+    } else {
+      playbackStateSaveJob =
+        serviceScope.launch(Dispatchers.IO) {
+          persistPlaybackState(identifier, snapshot)
+        }
     }
   }
 
@@ -1508,7 +1498,7 @@ class MediaPlaybackService :
     if (mpvAccessReleased) return
     mpvAccessReleased = true
 
-    runCatching { savePlaybackStateBlocking() }
+    runCatching { schedulePlaybackStateSave(force = true) }
       .onFailure { error -> Log.e(TAG, "Error saving playback state before MPV shutdown", error) }
     runCatching { PlaybackSession.removeObserver(this) }
       .onFailure { error -> Log.e(TAG, "Error removing MPV observer", error) }

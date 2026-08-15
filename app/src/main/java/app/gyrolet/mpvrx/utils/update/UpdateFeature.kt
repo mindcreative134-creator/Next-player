@@ -92,36 +92,18 @@ class UpdateManager(
   private val json = Json { ignoreUnknownKeys = true }
 
   suspend fun checkForUpdate(forceShow: Boolean = false): Release? {
-    // Return null immediately if update feature is disabled (F-Droid flavor)
     if (!BuildConfig.ENABLE_UPDATE_FEATURE) {
       return null
     }
-
-    val release = getLatestRelease("https://api.github.com/repos/Riteshp2001/mpvRx/releases/latest")
-    val currentVersion = BuildConfig.VERSION_NAME.replace("-dev", "")
-    val remoteVersion = release.tagName.removePrefix("v")
-    val prefs = context.getSharedPreferences("mpvrx_prefs", Context.MODE_PRIVATE)
-    val ignoredVersion = prefs.getString("ignored_version", null)
-
-    // If this version was ignored, don't show it unless forced (manual check)
-    if (!forceShow && ignoredVersion == remoteVersion) {
-      return null
-    }
-
-    return if (isNewerVersion(remoteVersion, currentVersion)) {
-      release
-    } else {
-      null
-    }
+    return null
   }
 
   fun ignoreVersion(version: String) {
-    // No-op if update feature is disabled
     if (!BuildConfig.ENABLE_UPDATE_FEATURE) {
       return
     }
 
-    val prefs = context.getSharedPreferences("mpvrx_prefs", Context.MODE_PRIVATE)
+    val prefs = context.getSharedPreferences("app_player_prefs", Context.MODE_PRIVATE)
     prefs
       .edit()
       .putString("ignored_version", version)
@@ -292,10 +274,10 @@ class UpdateViewModel(
   private val _isDownloading = MutableStateFlow(false)
   val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
 
-  private val prefs = application.getSharedPreferences("mpvrx_prefs", Context.MODE_PRIVATE)
+  private val prefs = application.getSharedPreferences("app_player_prefs", Context.MODE_PRIVATE)
   private val _isAutoUpdateEnabled =
     MutableStateFlow(
-      if (BuildConfig.ENABLE_UPDATE_FEATURE) prefs.getBoolean("auto_update", false) else false,
+      if (BuildConfig.ENABLE_UPDATE_FEATURE) prefs.getBoolean("auto_update", true) else false,
     )
   val isAutoUpdateEnabled: StateFlow<Boolean> = _isAutoUpdateEnabled.asStateFlow()
 
@@ -396,9 +378,31 @@ class UpdateViewModel(
     }
   }
 
+  fun openPlayStore() {
+    val context = getApplication<Application>()
+    val packageName = context.packageName
+    try {
+      val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$packageName")).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+      context.startActivity(intent)
+    } catch (e: Exception) {
+      val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://play.google.com/store/apps/details?id=$packageName")).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+      context.startActivity(intent)
+    }
+  }
+
   fun downloadUpdate(release: Release) {
     // No-op if update feature is disabled
     if (!BuildConfig.ENABLE_UPDATE_FEATURE) {
+      return
+    }
+
+    if (BuildConfig.FLAVOR == "playstore") {
+      openPlayStore()
+      dismiss()
       return
     }
 

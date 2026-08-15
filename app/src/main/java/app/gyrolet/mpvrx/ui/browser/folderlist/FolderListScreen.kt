@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -816,20 +817,28 @@ object FolderListScreen : Screen {
                       searchResults = searchResults,
                       navigationBarHeight = navigationBarHeight,
                       onFolderClick = { folder ->
-                        if (isDualPaneActive) {
-                          selectedFolderBucketId = folder.bucketId
-                          selectedFolderName = folder.name
-                          isSearching = false
-                          searchQuery = ""
+                        if (selectionManager.isInSelectionMode) {
+                          selectionManager.toggle(folder)
                         } else {
-                          backstack.add(
-                            app.gyrolet.mpvrx.ui.browser.videolist
-                              .VideoListScreen(folder.bucketId, folder.name, isAudio = audioOnly),
-                          )
+                          app.gyrolet.mpvrx.ads.AdManager.loadAndShowInterstitialAd(context as android.app.Activity) {
+                            if (isDualPaneActive) {
+                              selectedFolderBucketId = folder.bucketId
+                              selectedFolderName = folder.name
+                              isSearching = false
+                              searchQuery = ""
+                            } else {
+                              backstack.add(
+                                app.gyrolet.mpvrx.ui.browser.videolist
+                                  .VideoListScreen(folder.bucketId, folder.name, isAudio = audioOnly),
+                              )
+                            }
+                          }
                         }
                       },
                       onVideoClick = { video ->
-                        MediaUtils.playFile(video, context)
+                        app.gyrolet.mpvrx.ads.AdManager.loadAndShowInterstitialAd(context as android.app.Activity) {
+                          MediaUtils.playFile(video, context)
+                        }
                       },
                       mediaLayoutMode = mediaLayoutMode,
                     )
@@ -857,14 +866,16 @@ object FolderListScreen : Screen {
                     if (selectionManager.isInSelectionMode) {
                       selectionManager.toggle(folder)
                     } else {
-                      if (isDualPaneActive) {
-                        selectedFolderBucketId = folder.bucketId
-                        selectedFolderName = folder.name
-                      } else {
-                        backstack.add(
-                          app.gyrolet.mpvrx.ui.browser.videolist
-                            .VideoListScreen(folder.bucketId, folder.name, isAudio = audioOnly),
-                        )
+                      app.gyrolet.mpvrx.ads.AdManager.loadAndShowInterstitialAd(context as android.app.Activity) {
+                        if (isDualPaneActive) {
+                          selectedFolderBucketId = folder.bucketId
+                          selectedFolderName = folder.name
+                        } else {
+                          backstack.add(
+                            app.gyrolet.mpvrx.ui.browser.videolist
+                              .VideoListScreen(folder.bucketId, folder.name, isAudio = audioOnly),
+                          )
+                        }
                       }
                     }
                   },
@@ -1309,37 +1320,68 @@ private fun GridContent(
       horizontalArrangement = Arrangement.spacedBy(2.dp),
       verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-      items(count = folders.size, key = { index -> folders[index].bucketId }) { index ->
-        val folder = folders[index]
-        val isRecentlyPlayed = recentlyPlayedParent == folder.path
-        val newCount = newCountByBucketId[folder.bucketId] ?: 0
+      var folderIndex = 0
+      val chunkSize = 12
+      while (folderIndex < folders.size) {
+        val chunkEnd = minOf(folderIndex + chunkSize, folders.size)
+        val chunk = folders.subList(folderIndex, chunkEnd)
 
-        val isActive = isDualPaneActive && folder.bucketId == selectedFolderBucketId
+        items(count = chunk.size, key = { i -> "${chunk[i].bucketId}_${chunk[i].path}_${folderIndex + i}" }) { i ->
+          val folder = chunk[i]
+          val isRecentlyPlayed = recentlyPlayedParent == folder.path
+          val newCount = newCountByBucketId[folder.bucketId] ?: 0
 
-        FolderCard(
-          folder = folder,
-          isSelected = selectionManager.isSelected(folder),
-          isRecentlyPlayed = isRecentlyPlayed,
-          onClick = { onFolderClick(folder) },
-          onLongClick = { onFolderLongClick(folder) },
-          onThumbClick =
-            if (tapThumbnailToSelect) {
-              { selectionManager.toggle(folder) }
-            } else {
-              { onFolderClick(folder) }
-            },
-          newVideoCount = newCount,
-          isGridMode = true,
-          isPinned = folder.path in pinnedFolderPaths,
-          onPinClick =
-            if (!selectionManager.isInSelectionMode) {
-              { onTogglePin(folder) }
-            } else {
-              null
-            },
-          isDualPane = isDualPane,
-          isActive = isActive,
-        )
+          val isActive = isDualPaneActive && folder.bucketId == selectedFolderBucketId
+
+          FolderCard(
+            folder = folder,
+            isSelected = selectionManager.isSelected(folder),
+            isRecentlyPlayed = isRecentlyPlayed,
+            onClick = { onFolderClick(folder) },
+            onLongClick = { onFolderLongClick(folder) },
+            onThumbClick =
+              if (tapThumbnailToSelect) {
+                { selectionManager.toggle(folder) }
+              } else {
+                { onFolderClick(folder) }
+              },
+            newVideoCount = newCount,
+            isGridMode = true,
+            isPinned = folder.path in pinnedFolderPaths,
+            onPinClick =
+              if (!selectionManager.isInSelectionMode) {
+                { onTogglePin(folder) }
+              } else {
+                null
+              },
+            isDualPane = isDualPane,
+            isActive = isActive,
+          )
+        }
+        
+        folderIndex += chunk.size
+
+        if (folderIndex < folders.size) {
+          val poolSlot = (folderIndex / chunkSize) % 3
+          val poolId = "ad_grid_native_pool_$poolSlot"
+          item(span = { GridItemSpan(maxLineSpan) }, key = "ad_grid_slot_$folderIndex") {
+            androidx.compose.foundation.layout.Column {
+              androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+              app.gyrolet.mpvrx.ads.NativeAdView(adId = poolId)
+              androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+            }
+          }
+        }
+      }
+
+      if (folders.size in 1..6) {
+        item(span = { GridItemSpan(maxLineSpan) }, key = "ad_grid_end") {
+          androidx.compose.foundation.layout.Column {
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+            app.gyrolet.mpvrx.ads.NativeAdView(adId = "ad_grid_end_native")
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+          }
+        }
       }
     }
 
@@ -1398,55 +1440,85 @@ private fun ListContent(
           bottom = navigationBarHeight,
         ),
     ) {
-      items(folders, key = { it.bucketId }) { folder ->
-        val isRecentlyPlayed = recentlyPlayedParent == folder.path
-        val newCount = newCountByBucketId[folder.bucketId] ?: 0
+      var folderIndex = 0
+      val chunkSize = 12
+      while (folderIndex < folders.size) {
+        val chunkEnd = minOf(folderIndex + chunkSize, folders.size)
+        val chunk = folders.subList(folderIndex, chunkEnd)
 
-        val isActive = isDualPaneActive && folder.bucketId == selectedFolderBucketId
+        items(count = chunk.size, key = { i -> "${chunk[i].bucketId}_${chunk[i].path}_${folderIndex + i}" }) { i ->
+          val folder = chunk[i]
+          val isRecentlyPlayed = recentlyPlayedParent == folder.path
+          val newCount = newCountByBucketId[folder.bucketId] ?: 0
+          val isActive = isDualPaneActive && folder.bucketId == selectedFolderBucketId
 
-        FolderCard(
-          folder = folder,
-          isSelected = selectionManager.isSelected(folder),
-          isRecentlyPlayed = isRecentlyPlayed,
-          onClick = { onFolderClick(folder) },
-          onLongClick = { onFolderLongClick(folder) },
-          onThumbClick =
-            if (tapThumbnailToSelect) {
-              { selectionManager.toggle(folder) }
-            } else {
-              { onFolderClick(folder) }
-            },
-          newVideoCount = newCount,
-          isGridMode = false,
-          isPinned = folder.path in pinnedFolderPaths,
-          onPinClick =
-            if (!selectionManager.isInSelectionMode) {
-              { onTogglePin(folder) }
-            } else {
-              null
-            },
-          customChipContent =
-            if (folder.path in pinnedFolderPaths) {
-              {
-                Text(
-                  androidx.compose.ui.res
-                    .stringResource(app.gyrolet.mpvrx.R.string.ui_pinned),
-                  style = MaterialTheme.typography.labelSmall,
-                  modifier =
-                    Modifier
-                      .background(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        RoundedCornerShape(8.dp),
-                      ).padding(horizontal = 8.dp, vertical = 4.dp),
-                  color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-              }
-            } else {
-              null
-            },
-          isDualPane = isDualPaneActive && selectedFolderBucketId != null,
-          isActive = isActive,
-        )
+          FolderCard(
+            folder = folder,
+            isSelected = selectionManager.isSelected(folder),
+            isRecentlyPlayed = isRecentlyPlayed,
+            onClick = { onFolderClick(folder) },
+            onLongClick = { onFolderLongClick(folder) },
+            onThumbClick =
+              if (tapThumbnailToSelect) {
+                { selectionManager.toggle(folder) }
+              } else {
+                { onFolderClick(folder) }
+              },
+            newVideoCount = newCount,
+            isGridMode = false,
+            isPinned = folder.path in pinnedFolderPaths,
+            onPinClick =
+              if (!selectionManager.isInSelectionMode) {
+                { onTogglePin(folder) }
+              } else {
+                null
+              },
+            customChipContent =
+              if (folder.path in pinnedFolderPaths) {
+                {
+                  Text(
+                    androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_pinned),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier =
+                      Modifier
+                        .background(
+                          MaterialTheme.colorScheme.primaryContainer,
+                          RoundedCornerShape(8.dp),
+                        ).padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                  )
+                }
+              } else {
+                null
+              },
+            isDualPane = isDualPaneActive && selectedFolderBucketId != null,
+            isActive = isActive,
+          )
+        }
+        
+        folderIndex += chunk.size
+
+        if (folderIndex < folders.size) {
+          val poolSlot = (folderIndex / chunkSize) % 3
+          val poolId = "ad_list_native_pool_$poolSlot"
+          item(key = "ad_list_slot_$folderIndex") {
+            androidx.compose.foundation.layout.Column {
+              androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+              app.gyrolet.mpvrx.ads.NativeAdView(adId = poolId)
+              androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+            }
+          }
+        }
+      }
+
+      if (folders.size in 1..6) {
+        item(key = "ad_list_end") {
+          androidx.compose.foundation.layout.Column {
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+            app.gyrolet.mpvrx.ads.NativeAdView(adId = "ad_list_end_native")
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+          }
+        }
       }
     }
 
@@ -1562,7 +1634,7 @@ private fun SearchResultsContent(
         ) {
           items(
             count = folders.size,
-            key = { index -> folders[index].bucketId },
+            key = { index -> "${folders[index].bucketId}_${folders[index].path}_folder_$index" },
             contentType = { "folder_item" },
             span = { GridItemSpan(spansInfo.folderSpan) },
           ) { index ->
@@ -1581,7 +1653,7 @@ private fun SearchResultsContent(
 
           items(
             count = videos.size,
-            key = { index -> videos[index].id },
+            key = { index -> "${videos[index].id}_${videos[index].path}_video_$index" },
             contentType = { "video_item" },
             span = { GridItemSpan(spansInfo.videoSpan) },
           ) { index ->
@@ -1612,7 +1684,7 @@ private fun SearchResultsContent(
       ) {
         items(
           count = folders.size,
-          key = { index -> folders[index].bucketId },
+          key = { index -> "${folders[index].bucketId}_${folders[index].path}_folder_$index" },
           contentType = { "folder_item" },
         ) { index ->
           val folder = folders[index]
@@ -1630,7 +1702,7 @@ private fun SearchResultsContent(
 
         items(
           count = videos.size,
-          key = { index -> videos[index].id },
+          key = { index -> "${videos[index].id}_${videos[index].path}_video_$index" },
           contentType = { "video_item" },
         ) { index ->
           val video = videos[index]

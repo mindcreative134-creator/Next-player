@@ -369,9 +369,9 @@ object M3UParser {
     val source = sourceUrl ?: return stripUriUserInfo(resource) + optionSuffix
     val parsedSource = parseUriLeniently(source)
 
-    if (parsedSource?.scheme.equals("http", true) || parsedSource?.scheme.equals("https", true)) {
+    if (parsedSource != null && (parsedSource.scheme.equals("http", true) || parsedSource.scheme.equals("https", true))) {
       val resolved =
-        stripUserInfo(parsedSource!!)
+        stripUserInfo(parsedSource)
           .toString()
           .toHttpUrlOrNull()
           ?.resolve(".")

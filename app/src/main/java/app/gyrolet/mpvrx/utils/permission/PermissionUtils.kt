@@ -18,6 +18,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
+import androidx.core.content.ContextCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -177,28 +178,18 @@ object PermissionUtils {
       }
     }
 
-    // Wrap permission state to consider MANAGE_EXTERNAL_STORAGE on Android 11+
+    // Wrap permission state to consider standard media permissions as well as all files access if granted
     val effectivePermissionState =
       remember(permissionState.status, lifecycleTrigger) {
-        if (!BuildConfig.SCOPED_STORAGE_ONLY && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-          if (android.os.Environment.isExternalStorageManager()) {
-            object : PermissionState {
-              override val permission = permissionState.permission
-              override val status = PermissionStatus.Granted
+        val hasStandard = ContextCompat.checkSelfPermission(
+          context,
+          getStoragePermission(),
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
-              override fun launchPermissionRequest() = permissionState.launchPermissionRequest()
-            }
-          } else {
-            object : PermissionState {
-              override val permission = permissionState.permission
-              override val status = PermissionStatus.Denied(false)
-
-              override fun launchPermissionRequest() = permissionState.launchPermissionRequest()
-            }
-          }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+        val hasAllFiles = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
           android.os.Environment.isExternalStorageManager()
-        ) {
+
+        if (hasStandard || hasAllFiles) {
           object : PermissionState {
             override val permission = permissionState.permission
             override val status = PermissionStatus.Granted

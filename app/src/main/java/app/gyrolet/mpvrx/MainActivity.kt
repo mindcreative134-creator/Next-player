@@ -70,6 +70,7 @@ import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.ui.browser.MainScreen
+import app.gyrolet.mpvrx.ads.BottomBannerAdBar
 import app.gyrolet.mpvrx.ui.browser.NavigationBarState
 import app.gyrolet.mpvrx.ui.browser.components.MiniPlayer
 import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
@@ -531,8 +532,7 @@ class MainActivity : AppCompatActivity() {
                   .windowInsetsPadding(WindowInsets.navigationBars)
                   .padding(bottom = 12.dp, start = 12.dp, end = 12.dp)
 
-              // Portrait phones: full width with a small side margin. During selection,
-              // lift the mini player above the edit actions instead of covering them.
+              // Portrait phones: full width with a small side margin.
               isPortrait && !isTablet ->
                 Modifier
                   .align(Alignment.BottomCenter)
@@ -554,8 +554,7 @@ class MainActivity : AppCompatActivity() {
                         }),
                   )
 
-              // Landscape/tablet single-pane: sit on the right side of the nav bar,
-              // which slides left when the mini player appears.
+              // Landscape/tablet single-pane.
               else ->
                 Modifier
                   .align(Alignment.BottomStart)

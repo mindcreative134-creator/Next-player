@@ -101,15 +101,13 @@ class FolderListViewModel(
   }
 
   init {
-    // Load cached folders instantly for immediate display
-    val hasCachedData = loadCachedFolders()
-
-    // If no cached data (first launch), scan immediately. Otherwise defer to not slow down app launch
-    if (!hasCachedData) {
-      loadVideoFolders()
-    } else {
-      viewModelScope.launch(Dispatchers.IO) {
-        kotlinx.coroutines.delay(2000) // Wait 2 seconds before refreshing
+    // Load cached folders asynchronously on IO dispatcher to prevent main thread blocking (fixes ANR)
+    viewModelScope.launch(Dispatchers.IO) {
+      val hasCachedData = loadCachedFoldersAsync()
+      if (!hasCachedData) {
+        loadVideoFolders()
+      } else {
+        delay(2000) // Wait 2 seconds before refreshing in background
         loadVideoFolders()
       }
     }
@@ -127,7 +125,7 @@ class FolderListViewModel(
     // Filter folders based on blacklist
     viewModelScope.launch {
       combine(_allVideoFolders, foldersPreferences.blacklistedFolders.changes()) { folders, blacklist ->
-        folders.filter { folder -> folder.path !in blacklist }
+        folders.filter { folder -> folder.path !in blacklist }.distinctBy { folder -> folder.path.replace('\\', '/').trimEnd('/').lowercase(Locale.ROOT) }
       }.collectLatest { filteredFolders ->
         // Check if folders became empty after having folders
         if (previousFolderCount > 0 && filteredFolders.isEmpty()) {
@@ -142,7 +140,7 @@ class FolderListViewModel(
         previousFolderCount = filteredFolders.size
 
         _videoFolders.value = filteredFolders
-        // Calculate new video counts for each folder
+        // Calculate new video counts for each folder asynchronously
         calculateNewVideoCounts(filteredFolders)
 
         // Save to cache for next app launch (save unfiltered list)
@@ -151,29 +149,25 @@ class FolderListViewModel(
     }
   }
 
-  private fun loadCachedFolders(): Boolean {
+  private suspend fun loadCachedFoldersAsync(): Boolean {
     var hasCachedData = false
-    val prefs =
-      getApplication<Application>().getSharedPreferences("folder_cache", android.content.Context.MODE_PRIVATE)
-    val cachedJson = prefs.getString(currentFolderCacheKey(), null)
+    try {
+      val prefs =
+        getApplication<Application>().getSharedPreferences("folder_cache", android.content.Context.MODE_PRIVATE)
+      val cachedJson = prefs.getString(currentFolderCacheKey(), null)
 
-    if (cachedJson != null) {
-      try {
-        // Parse JSON and restore folders
+      if (cachedJson != null) {
         val folders = parseFoldersFromJson(cachedJson)
         if (folders.isNotEmpty()) {
-          Log.d(TAG, "Loaded ${folders.size} folders from cache instantly")
+          Log.d(TAG, "Loaded ${folders.size} folders from cache asynchronously")
           hasCachedData = true
-          viewModelScope.launch(Dispatchers.IO) {
-            _allVideoFolders.value = folders
-            _hasCompletedInitialLoad.value = true
-          }
+          _allVideoFolders.value = folders
+          _hasCompletedInitialLoad.value = true
         }
-      } catch (e: Exception) {
-        Log.e(TAG, "Error loading cached folders", e)
       }
+    } catch (e: Exception) {
+      Log.e(TAG, "Error loading cached folders", e)
     }
-
     return hasCachedData
   }
 
@@ -246,6 +240,14 @@ class FolderListViewModel(
           val watchedThreshold = browserPreferences.watchedThreshold.get()
           val currentTime = System.currentTimeMillis()
 
+          // Batch fetch all playback states once into memory to eliminate N database queries
+          val playbackStateMap = try {
+            playbackStateRepository.getAllPlaybackStates().associateBy { it.mediaTitle }
+          } catch (e: Exception) {
+            Log.e(TAG, "Error fetching playback states", e)
+            emptyMap()
+          }
+
           val foldersWithCounts =
             folders.map { folder ->
               try {
@@ -254,16 +256,13 @@ class FolderListViewModel(
                   app.gyrolet.mpvrx.repository.MediaFileRepository
                     .getVideosInFolder(getApplication(), folder.bucketId)
 
-                // Count new unplayed videos
+                // Count new unplayed videos using fast in-memory map lookup
                 val newCount =
                   videos.count { video ->
-                    // Check if video was modified within threshold days
                     val videoAge = currentTime - (video.dateModified * 1000)
                     val isRecent = videoAge <= thresholdMillis
 
-                    // A video counts as "unplayed" until it has been watched to the
-                    // configured threshold. Threshold 0 ("Infinitely") keeps it unplayed.
-                    val playbackState = playbackStateRepository.getVideoDataByTitle(video.displayName)
+                    val playbackState = playbackStateMap[video.displayName]
                     val isUnplayed =
                       if (playbackState != null && video.duration > 0) {
                         val durationSeconds = video.duration / 1000

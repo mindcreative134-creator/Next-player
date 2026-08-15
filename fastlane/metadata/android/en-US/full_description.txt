@@ -1,19 +1,46 @@
-mpvRx is a front-end for the versatile media player mpv, built on the libmpv library. It aims to combine the powerful features of mpv with an easier-to-use interface and additional functionality.
+NextPlayer is a powerful, lightweight, and modern HD & 4K video player designed to give you seamless media playback on your Android device. With support for all popular video and audio formats, advanced hardware acceleration, subtitle customization, floating Picture-in-Picture mode, and network streaming, NextPlayer is your complete offline and online media companion.
 
- - Simpler and Easier to Use UI: Designed to make navigation and playback smoother, especially for those who want a straightforward media player experience.
- - Advanced Configuration and Scripting: Offers the full capabilities of mpv's scripting and configuration for users who want to customize their playback.
- - Enhanced Playback Features: Frame-by-frame navigation, sleep timer, speed presets, and better playback history implementation.
- - Picture-in-Picture (PiP): Continue watching videos while using other apps.
- - Multi-Modal Controls: Includes customizable gestures for controlling volume, brightness, and playback, along with keyboard input support.
- - High-Quality Rendering: Hardware and software video decoding with advanced rendering settings.
- - Network Streaming: Play network streams with the "Open URL" function.
- - File Management: Provides basic file operations like copy, move, rename, and delete.
+Key Features:
 
-mpvRx aims to enhance the mpv experience by making it more accessible while retaining its flexibility and powerful playback capabilities.
+🎬 Universal Format Compatibility
+• Plays all major video formats: MKV, MP4, AVI, MOV, FLV, WMV, 3GP, TS, WebM, RMVB, and MPG.
+• Supports high-resolution audio codecs including MP3, AAC, FLAC, WAV, OGG, and Opus.
+• Multi-track audio and subtitle selector for movies with multiple languages.
 
-This app respects your freedom and privacy:
+⚡ Smooth HD & 4K Playback
+• Enjoy ultra-smooth playback for Full HD (1080p), 2K, 4K Ultra HD, and HDR videos.
+• Hardware-accelerated decoding engine optimizes battery efficiency and delivers fluid frame rates.
+• Customizable aspect ratios: Fit to screen, Crop, 16:9, 18:9, 21:9, and Original.
 
-* No trackers
-* No advertisements
-* Fully open source
-* No unnecessary permissions
+💬 Advanced Subtitle Customization
+• Full support for external and embedded subtitle formats: SRT, ASS, SSA, VTT, SUB, IDX, and PGS.
+• Real-time subtitle synchronization and delay adjustments.
+• Full styling control: customize font size, colors, outline, shadow, and screen positioning.
+• Dual Subtitle Mode: display primary and secondary subtitles simultaneously.
+
+🎵 Floating Window (PiP) & Background Playback
+• Picture-in-Picture (PiP) mode lets you watch your favorite videos in a floating window while browsing or chatting.
+• Background audio playback allows you to listen to podcasts, concerts, and videos even when the screen is locked.
+
+🚀 Intuitive Smart Gestures
+• Easy swipe controls to adjust volume, screen brightness, and playback seek position.
+• Smooth pinch-to-zoom to inspect fine details in any video.
+• Screen lock toggle to prevent accidental touches during playback.
+
+🔒 Secure Private Video Vault
+• Protect personal videos in a password-protected, encrypted secure folder.
+• Unlock your hidden media using PIN or Biometric / Fingerprint authentication.
+
+🌐 Local Network & Online Streaming
+• Stream media directly from your home network servers via SMB, FTP, and WebDAV protocols.
+• Direct URL playback support for HTTP, HTTPS, HLS (m3u8), RTSP, and RTMP streams.
+
+📂 Clean Media Library & Folder Browser
+• Automatically indexes all video and audio files from internal storage and SD cards.
+• Browse videos in customizable Folder, Tree, or Library views with A-Z sorting and quick search.
+• Track your playback progress and resume videos right where you left off.
+
+Permissions Notice:
+• Media / Storage Access: Required to locate and play video files stored on your device and SD card.
+• Foreground Media Service: Required for background audio playback and lock-screen notification controls.
+• Network Access: Required for network share streaming (SMB/FTP/WebDAV) and direct online stream playback.

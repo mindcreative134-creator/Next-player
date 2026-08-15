@@ -48,7 +48,7 @@ object YtdlpManager {
       }
 
       // Files to copy from assets/ytdl/ to filesDir/ytdl/
-      val ytdlFiles = arrayOf("setup.py", "wrapper", "python313.zip")
+      val ytdlFiles = arrayOf("yt-dlp", "setup.py", "wrapper", "python313.zip")
       for (name in ytdlFiles) {
         copyAssetFile(context, "ytdl/$name", File(ytdlDir, name))
       }
@@ -58,6 +58,17 @@ object YtdlpManager {
 
       // Set executable permission on wrapper (just in case it's used)
       File(ytdlDir, "wrapper").setExecutable(true)
+    }
+
+  suspend fun ensureAssetsCopied(context: Context) =
+    withContext(Dispatchers.IO) {
+      val ytdlDir = getYtdlDir(context)
+      val ytDlp = File(ytdlDir, "yt-dlp")
+      val pythonZip = File(ytdlDir, "python313.zip")
+      val cacert = File(context.filesDir, "cacert.pem")
+      if (!ytDlp.exists() || !pythonZip.exists() || !cacert.exists()) {
+        copyAssets(context)
+      }
     }
 
   private fun copyAssetFile(
@@ -95,6 +106,18 @@ object YtdlpManager {
     val ytDlpScriptPath = File(ytdlDir, "yt-dlp").absolutePath
     val pythonPath = File(nativeLibDir, "libpython.so").absolutePath
 
+    // Ensure assets are present if first run
+    val ytDlpFile = File(ytdlDir, "yt-dlp")
+    val pythonZipFile = File(ytdlDir, "python313.zip")
+    val cacertFile = File(context.filesDir, "cacert.pem")
+    if (!ytDlpFile.exists() || !pythonZipFile.exists() || !cacertFile.exists()) {
+      runCatching {
+        copyAssetFile(context, "ytdl/yt-dlp", ytDlpFile)
+        copyAssetFile(context, "ytdl/python313.zip", pythonZipFile)
+        copyAssetFile(context, "cacert.pem", cacertFile)
+      }
+    }
+
     // Set environment variables for the subprocesses started by libmpv
     try {
       Os.setenv("YTDL_PYTHON", pythonPath, true)
@@ -121,7 +144,6 @@ object YtdlpManager {
     }
 
     // Check if yt-dlp actually exists. If not, log a warning.
-    val ytDlpFile = File(ytdlDir, "yt-dlp")
     if (!ytDlpFile.exists()) {
       Log.w(TAG, "yt-dlp not found in ${ytDlpFile.absolutePath}. Subprocess will fail until installed.")
     }
@@ -175,8 +197,9 @@ object YtdlpManager {
 
     Log.d(TAG, "Setting ytdl-format to: $ytdlFormat")
     Log.d(TAG, "Setting ytdl-raw-options to: ${resolvedOptions.rawOptions}")
-    PlaybackSession.setOptionString("ytdl-raw-options", resolvedOptions.rawOptions)
-    PlaybackSession.setOptionString("script-opts-append", "ytdl_hook-user_agent=\"$ua\"")
+    if (resolvedOptions.rawOptions.isNotBlank()) {
+      PlaybackSession.setOptionString("ytdl-raw-options", resolvedOptions.rawOptions)
+    }
 
     Log.d(TAG, "MPV ytdl options set. Binary: $ytdlBinaryPath")
   }

@@ -282,18 +282,33 @@ object MediaUtils {
   const val EXTRA_MEDIA_POSTER_URL = "torrent_media_poster_url"
   const val EXTRA_MEDIA_BACKDROP_URL = "torrent_media_backdrop_url"
 
+  val URL_REGEX = Regex("""https?://[^\s<>"{}|\\^`]+""", RegexOption.IGNORE_CASE)
+
+  /**
+   * Extracts the first http/https URL from raw text (e.g. from share intents, clipboard).
+   * Strips trailing punctuation such as '.', ',', ';', '!', ')', ']', '}'.
+   */
+  fun extractFirstUrl(text: String): String? {
+    val trimmed = text.trim()
+    val match = URL_REGEX.find(trimmed)
+    return match?.value?.trim()?.trimEnd('.', ',', ';', '!', ')', ']', '}')
+  }
+
   /**
    * Validate URL structure and protocol support.
    * Checks only URL format and MPV protocol support (http, https, rtsp, rtmp, etc.).
    * Network errors are detected when MPV attempts to open the stream.
    */
-  fun isURLValid(url: String): Boolean =
-    isTorrentSource(url) ||
-      url.toUri().let { uri ->
+  fun isURLValid(url: String): Boolean {
+    val cleaned = extractFirstUrl(url) ?: url.trim()
+    return isTorrentSource(cleaned) ||
+      runCatching {
+        val uri = cleaned.toUri()
         val structureOk =
           uri.isHierarchical && !uri.isRelative && (!uri.host.isNullOrBlank() || !uri.path.isNullOrBlank())
         structureOk && Utils.PROTOCOLS.contains(uri.scheme)
-      }
+      }.getOrDefault(false)
+  }
 
   /**
    * Share videos via system share sheet.

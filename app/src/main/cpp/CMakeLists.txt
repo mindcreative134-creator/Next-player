@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.22.1)
 
+# Support 16 KB memory page sizes for Android 15/16+
+add_link_options("-Wl,-z,max-page-size=16384")
+
 project("mpvrx_native" C CXX)
 
 # Android 16 compatibility for libmpv's raw clone-based subprocess path.

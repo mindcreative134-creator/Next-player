@@ -52,6 +52,12 @@ class MPVView(
   private val ytdlPreferences: YtdlPreferences by inject()
   private val anime4kManager: Anime4KManager by inject()
   private val hdrToysManager: HdrToysManager by inject()
+  init {
+    // Explicitly request 32-bit RGBA_8888 surface pixel format to prevent
+    // Android/MIUI from defaulting to 16-bit RGB_565 (which causes color banding,
+    // dithering blur, and poor picture quality on devices like Redmi 12C / Mali GPUs).
+    holder.setFormat(android.graphics.PixelFormat.RGBA_8888)
+  }
 
   var isExiting = false
   var forceOpenGlFallback = false
@@ -108,22 +114,23 @@ class MPVView(
   }
 
   fun getVideoOutAspect(): Double? {
-    // Try to get aspect from video-params/aspect first
-    val rawAspect = PlaybackSession.getPropertyDouble("video-params/aspect")
-    val rotate = PlaybackSession.getPropertyInt("video-params/rotate") ?: 0
+    // ANR-FIX: PlaybackSession.getPropertyDouble/Int acquire nativeLock synchronously.
+    // Reading them from the UI (called during layout passes) can block the Main thread.
+    // Use the StateFlow values (propDouble/propInt) which are updated by MPV event
+    // callbacks — completely lock-free reads with no blocking risk.
+    val rawAspect = PlaybackSession.propDouble["video-params/aspect"].value
+    val rotate = PlaybackSession.propInt["video-params/rotate"].value ?: 0
 
     // If aspect is not available or 0, calculate from width and height
     val finalAspect =
       if (rawAspect == null || rawAspect < 0.001) {
-        val width =
-          runCatching {
-            PlaybackSession.getPropertyInt("width") ?: PlaybackSession.getPropertyInt("video-params/w") ?: 0
-          }.getOrDefault(0)
+        val width = PlaybackSession.propInt["video-params/w"].value
+          ?: PlaybackSession.propInt["width"].value
+          ?: 0
 
-        val height =
-          runCatching {
-            PlaybackSession.getPropertyInt("height") ?: PlaybackSession.getPropertyInt("video-params/h") ?: 0
-          }.getOrDefault(0)
+        val height = PlaybackSession.propInt["video-params/h"].value
+          ?: PlaybackSession.propInt["height"].value
+          ?: 0
 
         if (width > 0 && height > 0) {
           width.toDouble() / height.toDouble()
@@ -151,7 +158,8 @@ class MPVView(
       thisRef: Any?,
       property: KProperty<*>,
     ): Int {
-      val v = PlaybackSession.getPropertyString(name)
+      // ANR-FIX: Read from the lock-free StateFlow first to avoid blocking on nativeLock on the UI thread
+      val v = PlaybackSession.propString[name].value ?: PlaybackSession.getPropertyString(name)
       // we can get null here for "no" or other invalid value
       return v?.toIntOrNull() ?: -1
     }
@@ -216,6 +224,16 @@ class MPVView(
     PlaybackSession.setOptionString("vd-lavc-dr", "auto")
     PlaybackSession.setOptionString("vd-lavc-queue", "no")
 
+    // High-definition scaling & chroma clarity (matches MX Player / VLC sharpness)
+    // Ensures razor-sharp video rendering and eliminates bilinear blur on 720p/1080p/4K mobile displays.
+    PlaybackSession.setOptionString("scale", "spline36")
+    PlaybackSession.setOptionString("cscale", "spline36")
+    PlaybackSession.setOptionString("dscale", "mitchell")
+    PlaybackSession.setOptionString("correct-downscaling", "yes")
+    PlaybackSession.setOptionString("sigmoid-upscaling", "yes")
+    PlaybackSession.setOptionString("dither-depth", "auto")
+    PlaybackSession.setOptionString("dither", "fruit")
+
     if (decoderPreferences.useYUV420P.get()) {
       PlaybackSession.setOptionString("vf", "format=yuv420p")
     }
@@ -253,6 +271,22 @@ class MPVView(
     val preciseSeek = playerPreferences.usePreciseSeeking.get()
     PlaybackSession.setOptionString("hr-seek", if (preciseSeek) "yes" else "no")
     PlaybackSession.setOptionString("hr-seek-framedrop", if (preciseSeek) "no" else "yes")
+
+    // Fast probing, instant startup & smooth caching
+    PlaybackSession.setOptionString("cache", "yes")
+    PlaybackSession.setOptionString("cache-secs", "60")
+    PlaybackSession.setOptionString("cache-pause", "no")
+    PlaybackSession.setOptionString("cache-pause-wait", "1")
+    PlaybackSession.setOptionString("cache-pause-initial", "no")
+    PlaybackSession.setOptionString("demuxer-max-bytes", "256M")
+    PlaybackSession.setOptionString("demuxer-max-back-bytes", "64M")
+    PlaybackSession.setOptionString("demuxer-readahead-secs", "60")
+    PlaybackSession.setOptionString("demuxer-lavf-probesize", "3000000")
+    PlaybackSession.setOptionString("demuxer-lavf-analyzeduration", "2")
+    PlaybackSession.setOptionString("audio-buffer", "0.2")
+    PlaybackSession.setOptionString("demuxer-lavf-buffersize", "1048576")
+    PlaybackSession.setOptionString("stream-buffer-size", "4096KiB")
+    PlaybackSession.setOptionString("network-timeout", "15")
 
     // Use audio-based video sync for better frame pacing with 4K HDR content.
     // This prevents timing jitter when the display refresh rate doesn't perfectly
@@ -359,13 +393,21 @@ class MPVView(
   }
 
   override fun surfaceDestroyed(holder: android.view.SurfaceHolder) {
+    // SIGABRT-FIX: Set isSurfaceReady=false BEFORE unbindSurface so that any concurrent
+    // surfaceCreated path sees the flag immediately and does not race with our detach.
+    // unbindSurface holds nativeLock internally, so it is already serialised with bindSurface.
     isSurfaceReady = false
+    Log.d(TAG, "[ANR-AUDIT] surfaceDestroyed: detaching surface")
     PlaybackSession.unbindSurface(this)
+    Log.d(TAG, "[ANR-AUDIT] surfaceDestroyed: surface detached")
   }
 
   private fun applyFrameRate() {
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-      val fps = PlaybackSession.getPropertyDouble("container-fps") ?: 0.0
+      // ANR-FIX: getPropertyDouble("container-fps") acquires nativeLock on the calling thread.
+      // applyFrameRate() is invoked from surfaceCreated/surfaceChanged callbacks which run on
+      // the Main thread. Use the StateFlow value (lock-free read) instead.
+      val fps = PlaybackSession.propDouble["container-fps"].value ?: 0.0
       if (fps > 0.0 && holder?.surface?.isValid == true) {
         try {
           holder.surface.setFrameRate(
@@ -387,8 +429,24 @@ class MPVView(
       "video-params/aspect" to MPVLib.MpvFormat.MPV_FORMAT_DOUBLE,
       "video-params/w" to MPVLib.MpvFormat.MPV_FORMAT_INT64,
       "video-params/h" to MPVLib.MpvFormat.MPV_FORMAT_INT64,
+      // ANR-FIX: video-params/rotate is read by getVideoOutAspect() via propInt StateFlow.
+      // Must be observed so the StateFlow is populated by MPV event callbacks.
+      "video-params/rotate" to MPVLib.MpvFormat.MPV_FORMAT_INT64,
       "container-fps" to MPVLib.MpvFormat.MPV_FORMAT_DOUBLE,
       "eof-reached" to MPVLib.MpvFormat.MPV_FORMAT_FLAG,
+      "user-data/nexplay/show_text" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/toggle_ui" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/show_panel" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/set_button_title" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/reset_button_title" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/toggle_button" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/seek_by" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/seek_to" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/seek_by_with_text" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/seek_to_with_text" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/software_keyboard" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/curl_request" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "user-data/nexplay/curl_response" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
       "user-data/mpvrx/show_text" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
       "user-data/mpvrx/toggle_ui" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
       "user-data/mpvrx/show_panel" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
@@ -400,14 +458,16 @@ class MPVView(
       "user-data/mpvrx/seek_by_with_text" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
       "user-data/mpvrx/seek_to_with_text" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
       "user-data/mpvrx/software_keyboard" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
-      // Curl bridge: scripts write a JSON request here; response is written to curl_response
       "user-data/mpvrx/curl_request" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
-      // curl_response is written by the bridge; scripts observe this property for results
       "user-data/mpvrx/curl_response" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
       // Track console visibility state
       "user-data/mpv/console/open" to MPVLib.MpvFormat.MPV_FORMAT_FLAG,
       "sub-text" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
       "sub-scale" to MPVLib.MpvFormat.MPV_FORMAT_DOUBLE,
+      // ANR-FIX: Observe active track IDs so propString StateFlows update automatically
+      "sid" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "secondary-sid" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
+      "aid" to MPVLib.MpvFormat.MPV_FORMAT_STRING,
     )
 
   private fun setupAudioOptions() {
@@ -629,7 +689,14 @@ class MPVView(
       return "no"
     }
 
-    return "mediacodec,mediacodec-copy,no"
+    val mode = decoderPreferences.hwdecMode.get()
+    return when (mode) {
+      "no" -> "no"
+      "mediacodec" -> "mediacodec"
+      "mediacodec-copy" -> "mediacodec-copy"
+      "auto-copy" -> "auto-copy"
+      else -> "mediacodec,mediacodec-copy,no"
+    }
   }
 
   private fun selectRenderBackend(ignoreForcedOpenGlFallback: Boolean = false): RenderBackendSelection {

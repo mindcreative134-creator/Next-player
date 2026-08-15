@@ -1,1 +1,1 @@
-mpvRx
+NextPlayer: HD Video Player

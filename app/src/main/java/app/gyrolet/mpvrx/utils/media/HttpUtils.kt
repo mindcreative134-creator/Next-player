@@ -20,8 +20,12 @@ import java.net.URLDecoder
 
 object HttpUtils {
   private const val TAG = "HttpUtils"
-  private const val CONNECTION_TIMEOUT = 3000
-  private const val READ_TIMEOUT = 3000
+  private const val CONNECTION_TIMEOUT = 5000
+  private const val READ_TIMEOUT = 5000
+
+  const val DEFAULT_USER_AGENT =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+
   private val directMediaExtensions =
     setOf(
       "mp4",
@@ -177,6 +181,43 @@ object HttpUtils {
   }
 
   /**
+   * Normalizes a user-input URL string while preserving all query parameters, tokens,
+   * fragments, and encoding. Adds missing scheme if necessary.
+   */
+  fun normalizeUrl(inputUrl: String): String {
+    val trimmed = inputUrl.trim()
+    if (trimmed.isBlank()) return ""
+    return when {
+      trimmed.startsWith("http://", ignoreCase = true) ||
+        trimmed.startsWith("https://", ignoreCase = true) ||
+        trimmed.startsWith("rtmp://", ignoreCase = true) ||
+        trimmed.startsWith("rtmps://", ignoreCase = true) ||
+        trimmed.startsWith("rtsp://", ignoreCase = true) ||
+        trimmed.startsWith("mms://", ignoreCase = true) -> trimmed
+      trimmed.contains("://") -> trimmed
+      else -> "https://$trimmed"
+    }
+  }
+
+  /**
+   * Describes the stream container or protocol based on URL pattern for UI preview cards.
+   */
+  fun getStreamTypeDescription(url: String): String {
+    val lower = url.lowercase()
+    return when {
+      lower.contains(".m3u8") || lower.contains("/hls/") -> "HLS Adaptive Stream (.m3u8)"
+      lower.contains(".mpd") || lower.contains("/dash/") -> "MPEG-DASH Manifest (.mpd)"
+      lower.contains(".mp4") || lower.contains("/mp4/") -> "HTTP/HTTPS MP4 Video"
+      lower.contains(".mkv") -> "Matroska Video (.mkv)"
+      lower.contains(".webm") -> "WebM Stream (.webm)"
+      lower.contains("youtube.com") || lower.contains("youtu.be") -> "YouTube Video Stream"
+      lower.contains("twitch.tv") -> "Twitch Stream"
+      lower.contains("vimeo.com") -> "Vimeo Stream"
+      else -> "Network Media Stream"
+    }
+  }
+
+  /**
    * True when [uri] is a network stream that points directly at a media/manifest file
    * (e.g. .m3u8/.mpd/.mp4/.ts). Such URLs should bypass yt-dlp and be handed straight to
    * mpv/ffmpeg's native demuxers, exactly like a dedicated player (MX Player/VLC) would.
@@ -187,14 +228,21 @@ object HttpUtils {
   }
 
   private fun hasDirectMediaExtension(uri: Uri): Boolean {
+    val path = uri.path.orEmpty()
+    val cleanPath = path.substringBefore('?').substringBefore('#')
+    val pathExtension = cleanPath.substringAfterLast('.', "").lowercase()
+    if (pathExtension in directMediaExtensions) return true
+
     val lastSegment =
       uri.lastPathSegment
         ?.substringAfterLast('/')
         ?.let(Uri::decode)
         .orEmpty()
-    if (lastSegment.isBlank()) return false
-    val extension = lastSegment.substringAfterLast('.', "").lowercase()
-    return extension in directMediaExtensions
+    if (lastSegment.isNotBlank()) {
+      val segExtension = lastSegment.substringBefore('?').substringBefore('#').substringAfterLast('.', "").lowercase()
+      if (segExtension in directMediaExtensions) return true
+    }
+    return false
   }
 
   /**

@@ -1,1 +1,1 @@
-A powerful media player built on mpv with an improved user interface
+Fast HD & 4K video player with subtitles, floating PiP, equalizer and folders.

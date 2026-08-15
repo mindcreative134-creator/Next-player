@@ -135,13 +135,35 @@ object DecoderPreferencesScreen : Screen {
 
               PreferenceDivider()
 
+              val hwdecMode by preferences.hwdecMode.collectAsState()
+              val currentDecoder = app.gyrolet.mpvrx.ui.player.Decoder.getDecoderFromValue(hwdecMode)
+              ListPreference(
+                value = currentDecoder,
+                onValueChange = { preferences.hwdecMode.set(it.value) },
+                values = listOf(
+                  app.gyrolet.mpvrx.ui.player.Decoder.Auto,
+                  app.gyrolet.mpvrx.ui.player.Decoder.HWPlus,
+                  app.gyrolet.mpvrx.ui.player.Decoder.HW,
+                  app.gyrolet.mpvrx.ui.player.Decoder.SW,
+                ),
+                title = { Text(stringResource(R.string.pref_decoder_try_hw_dec_title)) },
+                summary = {
+                  Text(
+                    currentDecoder.title,
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+              )
+
+              PreferenceDivider()
+
               val tryHWDecoding by preferences.tryHWDecoding.collectAsState()
               SwitchPreference(
                 value = tryHWDecoding,
                 onValueChange = {
                   preferences.tryHWDecoding.set(it)
                 },
-                title = { Text(stringResource(R.string.pref_decoder_try_hw_dec_title)) },
+                title = { Text(stringResource(R.string.pref_decoder_try_hw_dec_title) + " (Enable)") },
               )
 
               PreferenceDivider()

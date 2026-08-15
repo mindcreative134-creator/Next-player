@@ -627,11 +627,10 @@ class PlayerActivity :
 
     val attachedToCurrentSession = attachToCurrentPlaybackSessionIfRequested()
     if (!attachedToCurrentSession) getPlayableUri(intent)?.let { playableUri ->
-      // Remind user if they forgot to set up yt-dlp
-      if (playableUri.startsWith("http") && !playableUri.substringAfterLast('/').contains('.')) {
-        val ytdlDir = YtdlpManager.getYtdlDir(this)
-        if (!File(ytdlDir, "yt-dlp").exists()) {
-          viewModel.showToast(getString(R.string.toast_need_ytdl))
+      // Ensure yt-dlp extraction assets are ready for web and network streams
+      if (playableUri.startsWith("http://", ignoreCase = true) || playableUri.startsWith("https://", ignoreCase = true)) {
+        lifecycleScope.launch(Dispatchers.IO) {
+          YtdlpManager.ensureAssetsCopied(this@PlayerActivity)
         }
       }
 
@@ -1022,15 +1021,22 @@ class PlayerActivity :
   }
 
   private fun setupAudio() {
-    audioPreferences.audioChannels.get().let {
+    // ANR-FIX: PlaybackSession.setPropertyString acquires nativeLock synchronously.
+    // Calling it from onCreate() on the Main thread risks blocking input dispatch → ANR.
+    // Snapshot the preference value first (safe on Main), then apply MPV property
+    // on a background dispatcher where lock contention cannot freeze the UI.
+    val channels = audioPreferences.audioChannels.get()
+    lifecycleScope.launch(Dispatchers.Default) {
       runCatching {
-        if (it == AudioChannels.ReverseStereo) {
+        Log.d(TAG, "[ANR-AUDIT] setupAudio: applying audio channels=${channels.property}")
+        if (channels == AudioChannels.ReverseStereo) {
           PlaybackSession.setPropertyString(AudioChannels.AutoSafe.property, AudioChannels.AutoSafe.value)
         } else {
-          PlaybackSession.setPropertyString(it.property, it.value)
+          PlaybackSession.setPropertyString(channels.property, channels.value)
         }
+        Log.d(TAG, "[ANR-AUDIT] setupAudio: audio channels applied")
       }.onFailure { e ->
-        Log.e(TAG, "Error setting audio channels: ${it.property}=${it.value}", e)
+        Log.e(TAG, "Error setting audio channels: ${channels.property}=${channels.value}", e)
       }
     }
 
@@ -1365,6 +1371,7 @@ class PlayerActivity :
   }
 
   override fun onStop() {
+    isActive = false
     MediaPlaybackService.activityForeground = false
     runCatching {
       pipHelper.onStop()
@@ -1448,6 +1455,7 @@ class PlayerActivity :
   fun getCurrentPlayableUriForLookup(): String? = currentPlayableUri ?: intent?.dataString
 
   override fun onStart() {
+    isActive = true
     super.onStart()
     if (!mpvInitialized) return
     MediaPlaybackService.activityForeground = true
@@ -2592,9 +2600,13 @@ class PlayerActivity :
               .ifBlank { null }
           val displayTitle = title ?: language
 
-          withContext(Dispatchers.Main.immediate) {
-            if (!canIssueMpvCommands()) return@withContext
+          // ANR-FIX: All MPV operations (command, getPropertyInt, setPropertyString) acquire
+          // nativeLock. Running them on Dispatchers.Main.immediate can block the Main thread
+          // → ANR. Switch to Dispatchers.Default; only canIssueMpvCommands() needs Main.
+          val canIssue = withContext(Dispatchers.Main.immediate) { canIssueMpvCommands() }
+          if (!canIssue) continue
 
+          withContext(Dispatchers.Default) {
             Log.v(TAG, "Adding subtitles from intent extras: $subfile")
             val trackCountBefore = PlaybackSession.getPropertyInt("track-list/count") ?: 0
             runCatching {
@@ -2630,7 +2642,6 @@ class PlayerActivity :
    * @param extras Bundle containing HTTP headers
    */
   private fun setHttpHeadersFromExtras(extras: Bundle?) {
-    // Build header map starting with auto-detected referer
     val headerMap = mutableMapOf<String, String>()
     var userAgent: String? = null
 
@@ -2643,19 +2654,61 @@ class PlayerActivity :
       }
     }
 
-    // Process headers from extras (these can override the auto-detected referer)
-    extras?.getStringArray("headers")?.let { headers ->
-      headers
-        .asList()
-        .chunked(2)
-        .filter { it.size == 2 }
-        .forEach { (key, value) ->
-          if (key.equals("User-Agent", ignoreCase = true)) {
-            userAgent = value
-          } else {
-            headerMap[key] = value
+    if (extras != null) {
+      // Check direct extras for user agent / referer
+      (extras.getString("User-Agent") ?: extras.getString("user_agent"))?.takeIf { it.isNotBlank() }?.let {
+        userAgent = it
+      }
+      (extras.getString("Referer") ?: extras.getString("referer"))?.takeIf { it.isNotBlank() }?.let {
+        headerMap["Referer"] = it
+      }
+
+      // Check bundle headers (e.g. android.media.intent.extra.HTTP_HEADERS or http_headers or headers)
+      val headerBundle = extras.getBundle("android.media.intent.extra.HTTP_HEADERS")
+        ?: extras.getBundle("http_headers")
+        ?: extras.getBundle("headers")
+
+      if (headerBundle != null) {
+        for (k in headerBundle.keySet()) {
+          val v = headerBundle.getString(k)
+          if (!v.isNullOrBlank()) {
+            if (k.equals("User-Agent", ignoreCase = true)) {
+              userAgent = v
+            } else {
+              headerMap[k] = v
+            }
           }
         }
+      }
+
+      // Check string array (pairs [k, v, k, v] or colon formatted ["k: v", "k: v"])
+      val stringArray = extras.getStringArray("headers") ?: extras.getStringArray("http_headers")
+      if (stringArray != null) {
+        val list = stringArray.filter { it.isNotBlank() }
+        val hasColonPairs = list.any { it.contains(":") }
+        if (hasColonPairs) {
+          for (entry in list) {
+            val idx = entry.indexOf(':')
+            if (idx > 0) {
+              val key = entry.substring(0, idx).trim()
+              val value = entry.substring(idx + 1).trim()
+              if (key.equals("User-Agent", ignoreCase = true)) {
+                userAgent = value
+              } else {
+                headerMap[key] = value
+              }
+            }
+          }
+        } else {
+          list.chunked(2).filter { it.size == 2 }.forEach { (key, value) ->
+            if (key.equals("User-Agent", ignoreCase = true)) {
+              userAgent = value
+            } else {
+              headerMap[key] = value
+            }
+          }
+        }
+      }
     }
 
     applyHttpHeaders(userAgent, headerMap)
@@ -2696,15 +2749,39 @@ class PlayerActivity :
    * @param intent The intent containing the file URI
    * @return The resolved file path, or null if not found
    */
-  private fun parsePathFromIntent(intent: Intent): String? =
+  private fun parsePathFromIntent(intent: Intent): String? {
     intent
       .getStringExtra("local_media_path")
       ?.takeIf { path -> File(path).isFile }
-      ?: when (intent.action) {
-        Intent.ACTION_VIEW -> intent.data?.resolveUri(this)
-        Intent.ACTION_SEND -> parsePathFromSendIntent(intent)
-        else -> intent.getStringExtra("uri")
+      ?.let { return it }
+
+    val uriFromData = intent.data?.resolveUri(this)
+    if (!uriFromData.isNullOrBlank()) return uriFromData
+
+    val explicitUri = (intent.getStringExtra("uri")
+      ?: intent.getStringExtra("url")
+      ?: intent.getStringExtra("stream_url")
+      ?: intent.getStringExtra("video_url")
+      ?: intent.getStringExtra("link"))?.trim()
+
+    if (!explicitUri.isNullOrBlank()) {
+      val parsed = explicitUri.toUri()
+      return parsed.resolveUri(this) ?: explicitUri
+    }
+
+    if (intent.action == Intent.ACTION_SEND) {
+      return parsePathFromSendIntent(intent)
+    }
+
+    intent.getStringExtra(Intent.EXTRA_TEXT)?.let { text ->
+      val extractedUrl = MediaUtils.extractFirstUrl(text)
+      if (!extractedUrl.isNullOrBlank()) {
+        return extractedUrl
       }
+    }
+
+    return null
+  }
 
   /**
    * Parses the file path from a SEND intent.
@@ -2726,11 +2803,16 @@ class PlayerActivity :
       uri?.resolveUri(this@PlayerActivity)
     } else {
       intent.getStringExtra(Intent.EXTRA_TEXT)?.let { text ->
-        val uri = text.trim().toUri()
-        if (uri.isHierarchical && !uri.isRelative) {
-          uri.resolveUri(this)
+        val extractedUrl = MediaUtils.extractFirstUrl(text)
+        if (!extractedUrl.isNullOrBlank()) {
+          extractedUrl
         } else {
-          null
+          val uri = text.trim().toUri()
+          if (uri.isHierarchical && !uri.isRelative) {
+            uri.resolveUri(this)
+          } else {
+            null
+          }
         }
       }
     }
@@ -3058,6 +3140,15 @@ class PlayerActivity :
       if (!playerPreferences.keepScreenOnWhenPaused.get()) {
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
       }
+      // Show Pause Ad if user has watched at least 15s and is not in PiP mode
+      // Exclude YouTube streams to remain fully compliant with AdMob & Google Play policies
+      val currentPosSec = viewModel.pos ?: 0
+      val isYouTubeStream = currentPlayableUri?.let {
+        it.contains("youtube.com", ignoreCase = true) || it.contains("youtu.be", ignoreCase = true) || it.contains("googlevideo.com", ignoreCase = true)
+      } ?: false
+      if (currentPosSec >= 15 && !isInPictureInPictureMode && !isFinishing && !isYouTubeStream) {
+        app.gyrolet.mpvrx.ads.AdManager.showPauseAd(this@PlayerActivity)
+      }
     } else {
       window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
@@ -3166,7 +3257,7 @@ class PlayerActivity :
       }
       else -> {
         when (property.substringBeforeLast("/")) {
-          "user-data/mpvrx" -> viewModel.handleLuaInvocation(property, value)
+          "user-data/nexplay", "user-data/mpvrx" -> viewModel.handleLuaInvocation(property, value)
         }
       }
     }
@@ -3304,14 +3395,30 @@ class PlayerActivity :
         eofAdvanceJob = null
         isAdvancingAtEof = false
         isReady = true
-        if (restoreVideoTrackAfterFileLoad) {
-          restoreVideoTrackAfterFileLoad = false
-          PlaybackSession.setPropertyString("vid", "auto")
-        }
-        if (playWhenFileLoaded) {
-          playWhenFileLoaded = false
-          requestAudioFocus()
-          PlaybackSession.setPropertyBoolean("pause", false)
+        // ANR-FIX: setPropertyString/setPropertyBoolean acquire nativeLock.
+        // Calling them synchronously from the MPV event thread risks deadlock/ANR
+        // if the calling thread already holds MPV-internal locks. Use a background
+        // coroutine so the event thread returns immediately and the lock is acquired
+        // from a pool thread without blocking input dispatch.
+        val capturedRestoreVideoTrack = restoreVideoTrackAfterFileLoad
+        val capturedPlayWhenLoaded = playWhenFileLoaded
+        if (capturedRestoreVideoTrack) restoreVideoTrackAfterFileLoad = false
+        if (capturedPlayWhenLoaded) playWhenFileLoaded = false
+        if (capturedRestoreVideoTrack || capturedPlayWhenLoaded) {
+          lifecycleScope.launch(Dispatchers.Default) {
+            Log.d(TAG, "[ANR-AUDIT] FILE_LOADED: applying deferred MPV properties")
+            if (!PlaybackSession.isCurrentGeneration(loadGeneration)) return@launch
+            if (capturedRestoreVideoTrack) {
+              runCatching { PlaybackSession.setPropertyString("vid", "auto") }
+                .onFailure { Log.e(TAG, "[ANR-AUDIT] Failed to restore vid track", it) }
+            }
+            if (capturedPlayWhenLoaded) {
+              withContext(Dispatchers.Main) { requestAudioFocus() }
+              runCatching { PlaybackSession.setPropertyBoolean("pause", false) }
+                .onFailure { Log.e(TAG, "[ANR-AUDIT] Failed to set pause=false", it) }
+            }
+            Log.d(TAG, "[ANR-AUDIT] FILE_LOADED: deferred MPV properties applied")
+          }
         }
         viewModel.onVideoLoadCompleted()
         handleFileLoaded(loadGeneration)
@@ -3327,6 +3434,15 @@ class PlayerActivity :
           isReady = true
         }
         viewModel.onVideoLoadCompleted()
+      }
+
+      MPVLib.MpvEvent.MPV_EVENT_END_FILE -> {
+        if (PlaybackSession.state.value.phase == PlaybackPhase.ERROR) {
+          Log.w(TAG, "MPV_EVENT_END_FILE received during error phase")
+          lifecycleScope.launch(Dispatchers.Main) {
+            viewModel.onVideoLoadCompleted()
+          }
+        }
       }
     }
   }
@@ -3465,7 +3581,11 @@ class PlayerActivity :
 
     if (shouldForceCurrentMediaTitle()) {
       val preferredTitle = getPreferredCurrentTitle()
-      PlaybackSession.setPropertyString("force-media-title", preferredTitle)
+      // ANR-FIX: setPropertyString acquires nativeLock — must not run on Main thread.
+      lifecycleScope.launch(Dispatchers.Default) {
+        runCatching { PlaybackSession.setPropertyString("force-media-title", preferredTitle) }
+          .onFailure { Log.e(TAG, "[ANR-AUDIT] Failed to set force-media-title", it) }
+      }
       viewModel.setMediaTitle(preferredTitle)
     }
 
@@ -4326,11 +4446,10 @@ class PlayerActivity :
         return@let
       }
 
-      // Remind user if they forgot to set up yt-dlp
-      if (uri.startsWith("http") && !uri.substringAfterLast('/').contains('.')) {
-        val ytdlDir = YtdlpManager.getYtdlDir(this)
-        if (!File(ytdlDir, "yt-dlp").exists()) {
-          viewModel.showToast(getString(R.string.toast_need_ytdl))
+      // Ensure yt-dlp extraction assets are ready for web and network streams
+      if (uri.startsWith("http://", ignoreCase = true) || uri.startsWith("https://", ignoreCase = true)) {
+        lifecycleScope.launch(Dispatchers.IO) {
+          YtdlpManager.ensureAssetsCopied(this@PlayerActivity)
         }
       }
 
@@ -4381,6 +4500,9 @@ class PlayerActivity :
     mediaLoadJob =
       lifecycleScope.launch(mediaLoadDispatcher) {
         try {
+          if (!isTorrentRequest && (playableUri.startsWith("http://", ignoreCase = true) || playableUri.startsWith("https://", ignoreCase = true))) {
+            YtdlpManager.ensureAssetsCopied(this@PlayerActivity)
+          }
           if (!isTorrentRequest) torrentStreamingEngine.stopStream()
           if (isTorrentRequest && !advancedPreferences.enableP2pStreaming.get()) {
             torrentStreamingEngine.stopStream()
@@ -5435,16 +5557,28 @@ class PlayerActivity :
    * Play the next video in the playlist
    */
   override fun playNextQueueItem() {
-    PlaybackSession.selectNext() ?: return
-    loadPlaylistItem(PlaybackSession.queue.value.currentIndex)
+    val q = PlaybackSession.queue.value
+    if (q.items.isNotEmpty() && PlaybackQueueReducer.hasNext(q)) {
+      PlaybackSession.playNext()
+    } else if (playlist.isNotEmpty() && playlistIndex + 1 < playlist.size) {
+      loadPlaylistItem(playlistIndex + 1)
+    } else if (playlist.isNotEmpty() && playerPreferences.repeatMode.get() == RepeatMode.ALL) {
+      loadPlaylistItem(0)
+    }
   }
 
   /**
    * Play the previous video in the playlist
    */
   override fun playPreviousQueueItem() {
-    PlaybackSession.selectPrevious() ?: return
-    loadPlaylistItem(PlaybackSession.queue.value.currentIndex)
+    val q = PlaybackSession.queue.value
+    if (q.items.isNotEmpty() && PlaybackQueueReducer.hasPrevious(q)) {
+      PlaybackSession.playPrevious()
+    } else if (playlist.isNotEmpty() && playlistIndex - 1 >= 0) {
+      loadPlaylistItem(playlistIndex - 1)
+    } else if (playlist.isNotEmpty() && playerPreferences.repeatMode.get() == RepeatMode.ALL) {
+      loadPlaylistItem(playlist.lastIndex)
+    }
   }
 
   /**
@@ -6280,6 +6414,8 @@ class PlayerActivity :
   }
 
   companion object {
+    var isActive = false
+
     /**
      * Intent action used to return playback result data to the calling activity.
      */

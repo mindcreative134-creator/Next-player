@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -593,15 +595,17 @@ data class PlaylistDetailScreen(
                 if (selectionManager.isInSelectionMode) {
                   selectionManager.toggle(item)
                 } else {
-                  coroutineScope.launch {
-                    viewModel.updatePlayHistory(item.video.path)
-                  }
+                  app.gyrolet.mpvrx.ads.AdManager.loadAndShowInterstitialAd(context as android.app.Activity) {
+                    coroutineScope.launch {
+                      viewModel.updatePlayHistory(item.video.path)
+                    }
 
-                  val startIndex = videoItems.indexOfFirst { it.playlistItem.id == item.playlistItem.id }
-                  if (startIndex >= 0) {
-                    launchPlaylistPlayback(item, startIndex)
-                  } else {
-                    MediaUtils.playFile(item.video, context, "playlist_detail", title = item.playlistItem.fileName)
+                    val startIndex = videoItems.indexOfFirst { it.playlistItem.id == item.playlistItem.id }
+                    if (startIndex >= 0) {
+                      launchPlaylistPlayback(item, startIndex)
+                    } else {
+                      MediaUtils.playFile(item.video, context, "playlist_detail", title = item.playlistItem.fileName)
+                    }
                   }
                 }
               },
@@ -859,6 +863,13 @@ private fun PlaylistVideoListContent(
                     )
                   }
                 }
+              }
+
+              if ((index + 1) % 12 == 6 || (index + 1) % 12 == 0) {
+                val poolSlot = ((index + 1) / 12) % 3
+                Spacer(Modifier.height(8.dp))
+                app.gyrolet.mpvrx.ads.NativeAdView(adId = "playlist_detail_native_pool_$poolSlot")
+                Spacer(Modifier.height(8.dp))
               }
             }
           }

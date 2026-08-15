@@ -17,14 +17,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -323,7 +326,9 @@ object PlaylistScreen : Screen {
             if (selectionManager.isInSelectionMode) {
               selectionManager.toggle(playlistWithCount)
             } else {
-              backStack.add(PlaylistDetailScreen(playlistWithCount.playlist.id))
+              app.gyrolet.mpvrx.ads.AdManager.loadAndShowInterstitialAd(context as android.app.Activity) {
+                backStack.add(PlaylistDetailScreen(playlistWithCount.playlist.id))
+              }
             }
           },
           onPlaylistLongClick = { playlistWithCount ->
@@ -546,7 +551,7 @@ object PlaylistScreen : Screen {
               ),
             verticalArrangement = Arrangement.spacedBy(0.dp),
           ) {
-            items(playlistsWithCount, key = { it.playlist.id }) { playlistWithCount ->
+            itemsIndexed(playlistsWithCount, key = { _, item -> item.playlist.id }) { index, playlistWithCount ->
               PlaylistCard(
                 playlist = playlistWithCount.playlist,
                 itemCount = playlistWithCount.itemCount,
@@ -556,6 +561,12 @@ object PlaylistScreen : Screen {
                 onThumbClick = { onPlaylistClick(playlistWithCount) },
                 isGridMode = false,
               )
+              if ((index + 1) % 6 == 0 || (playlistsWithCount.size < 6 && index == playlistsWithCount.size - 1)) {
+                val poolSlot = ((index + 1) / 6) % 3
+                androidx.compose.foundation.layout.Spacer(androidx.compose.ui.Modifier.height(8.dp))
+                app.gyrolet.mpvrx.ads.NativeAdView(adId = "playlist_native_pool_$poolSlot")
+                androidx.compose.foundation.layout.Spacer(androidx.compose.ui.Modifier.height(8.dp))
+              }
             }
           }
           if (hasEnoughItems && scrollbarAlpha > 0.01f) {

@@ -33,5 +33,5 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "mpvRx"
+rootProject.name = "NextPlayer"
 include(":app")

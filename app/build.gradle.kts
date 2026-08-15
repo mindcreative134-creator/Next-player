@@ -19,11 +19,11 @@ android {
   ndkVersion = "27.3.13750724"
 
   defaultConfig {
-    applicationId = "app.gyrolet.mpvrx"
+    applicationId = "com.nextplayer.pro"
     minSdk = 26
     targetSdk = 36
-    versionCode = 200
-    versionName = "2.0.0"
+    versionCode = 544
+    versionName = "1.1.4"
 
     vectorDrawables {
       useSupportLibrary = true
@@ -35,6 +35,7 @@ android {
     externalNativeBuild {
       cmake {
         abiFilters += listOf("arm64-v8a", "armeabi-v7a") + x86Abis
+        arguments("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON", "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384", "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384")
       }
     }
   }
@@ -54,6 +55,12 @@ android {
       buildConfigField("boolean", "ENABLE_UPDATE_FEATURE", "true")
       buildConfigField("boolean", "SCOPED_STORAGE_ONLY", "false")
     }
+    create("playstore") {
+      dimension = "distribution"
+      buildConfigField("boolean", "ENABLE_UPDATE_FEATURE", "true")
+      buildConfigField("boolean", "SCOPED_STORAGE_ONLY", "true")
+      versionNameSuffix = "-playstore"
+    }
   }
 
   dependenciesInfo {
@@ -63,7 +70,7 @@ android {
 
   splits {
     abi {
-      isEnable = true
+      isEnable = false
       reset()
       include("armeabi-v7a", "arm64-v8a")
       if (enableX86) {
@@ -82,7 +89,7 @@ android {
         "proguard-rules.pro",
       )
       ndk {
-        debugSymbolLevel = "none"
+        debugSymbolLevel = "FULL"
       }
     }
 
@@ -124,7 +131,7 @@ android {
       excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
     }
     jniLibs {
-      useLegacyPackaging = true
+      useLegacyPackaging = false
       pickFirsts += "**/libc++_shared.so"
     }
   }
@@ -158,9 +165,11 @@ androidComponents {
           .find { it.filterType == FilterConfiguration.FilterType.ABI }
           ?.identifier
 
-      output.versionCode.set(
-        (output.versionCode.orNull ?: 0) * 10 + (abiCodes[abi] ?: 0),
-      )
+      if (abi != null) {
+        output.versionCode.set(
+          (output.versionCode.orNull ?: 0) * 10 + (abiCodes[abi] ?: 0),
+        )
+      }
     }
   }
 }
@@ -195,6 +204,7 @@ dependencies {
   implementation(libs.google.material)
   implementation(libs.androidx.compose.material)
   implementation(libs.androidx.ui.tooling.preview)
+  implementation(libs.play.services.ads)
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.leakcanary.android)
   implementation(libs.bundles.compose.navigation3)
@@ -238,6 +248,7 @@ dependencies {
   coreLibraryDesugaring(libs.desugar.jdk.libs)
 
   implementation(libs.truetype.parser)
+  implementation("androidx.lifecycle:lifecycle-process:2.8.3")
   implementation(libs.fsaf)
   implementation(libs.mediainfo.lib)
   implementation(libs.androidx.profileinstaller)

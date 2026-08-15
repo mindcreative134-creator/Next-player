@@ -1015,7 +1015,7 @@ object AdvancedPreferencesScreen : Screen {
 
                     SafeClipboard.copyPlainText(
                       context = context,
-                      label = "mpvrx_logs",
+                      label = "player_logs",
                       text = CrashActivity.concatLogs(deviceInfo, null, logcat),
                     )
                     CrashActivity.shareLogs(deviceInfo, null, logcat, activity)

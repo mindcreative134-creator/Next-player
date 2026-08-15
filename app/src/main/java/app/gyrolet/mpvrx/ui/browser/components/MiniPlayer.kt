@@ -261,10 +261,11 @@ private fun MiniPlayerContent(
     val primaryContainerColor = MaterialTheme.colorScheme.primaryContainer
 
     if (isVideoMode) {
-      // Calculate aspect ratio for video surface container
+      val w = videoWidth ?: 0L
+      val h = videoHeight ?: 0L
       val aspect = videoAspectRaw?.toFloat()
-        ?: if ((videoWidth ?: 0L) > 0L && (videoHeight ?: 0L) > 0L) {
-          videoWidth!!.toFloat() / videoHeight!!.toFloat()
+        ?: if (w > 0L && h > 0L) {
+          w.toFloat() / h.toFloat()
         } else {
           16f / 9f
         }

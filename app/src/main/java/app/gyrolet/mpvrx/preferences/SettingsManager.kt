@@ -317,7 +317,7 @@ class SettingsManager(
 
   fun getDefaultExportFilename(): String {
     val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-    return "mpvrx_settings_${dateFormat.format(Date())}.xml"
+    return "player_backup_${dateFormat.format(Date())}.xml"
   }
 
   data class ImportStats(

@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -458,10 +460,9 @@ data class VideoListScreen(
             if (selectionManager.isInSelectionMode) {
               selectionManager.toggle(video)
             } else {
-              // Always use MediaUtils.playFile which lets PlayerActivity auto-generate playlist
-              // This avoids TransactionTooLargeException from passing large playlists
-              // PlayerActivity will auto-generate playlist from folder if playlistMode is enabled
-              MediaUtils.playFile(video, context, "video_list")
+              app.gyrolet.mpvrx.ads.AdManager.loadAndShowInterstitialAd(context as android.app.Activity) {
+                MediaUtils.playFile(video, context, "video_list")
+              }
             }
           },
           onVideoLongClick = { video -> selectionManager.handleLongClick(video) },
@@ -1093,6 +1094,37 @@ internal fun VideoListContent(
                     )
                   }
                 }
+
+                // In-grid native ads: show after every 12 items (full-width span)
+                val gridChunkSize = 12
+                val gridAdCount = videosWithInfo.size / gridChunkSize
+                for (slot in 1..gridAdCount) {
+                  item(
+                    span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) },
+                    key = "video_grid_ad_$slot",
+                  ) {
+                    val poolSlot = slot % 3
+                    androidx.compose.foundation.layout.Column {
+                      Spacer(Modifier.height(8.dp))
+                      app.gyrolet.mpvrx.ads.NativeAdView(adId = "video_grid_native_pool_$poolSlot")
+                      Spacer(Modifier.height(8.dp))
+                    }
+                  }
+                }
+
+                // Fallback: for very small grid lists show a native ad at the end
+                if (videosWithInfo.size in 1..8) {
+                  item(
+                    span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) },
+                    key = "video_grid_ad_end",
+                  ) {
+                    androidx.compose.foundation.layout.Column {
+                      Spacer(Modifier.height(8.dp))
+                      app.gyrolet.mpvrx.ads.NativeAdView(adId = "video_grid_end_native")
+                      Spacer(Modifier.height(8.dp))
+                    }
+                  }
+                }
               }
 
               if (hasEnoughItems && scrollbarAlpha > 0.01f) {
@@ -1163,6 +1195,17 @@ internal fun VideoListContent(
                       allowThumbnailLoading = !isScrollbarDragging,
                       uiConfig = videoCardUiConfig,
                     )
+                  }
+
+                  if ((index + 1) % 12 == 0) {
+                    val poolSlot = ((index + 1) / 12) % 3
+                    Spacer(Modifier.height(8.dp))
+                    app.gyrolet.mpvrx.ads.NativeAdView(adId = "video_list_native_pool_$poolSlot")
+                    Spacer(Modifier.height(8.dp))
+                  } else if (videosWithInfo.size in 1..7 && index == videosWithInfo.size - 1) {
+                    Spacer(Modifier.height(8.dp))
+                    app.gyrolet.mpvrx.ads.NativeAdView(adId = "video_list_native_end_pool")
+                    Spacer(Modifier.height(8.dp))
                   }
                 }
               }
